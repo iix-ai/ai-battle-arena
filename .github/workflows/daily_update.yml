@@ -1,0 +1,42 @@
+name: Daily Auto-Update & Deploy
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # 每天自动运行
+  workflow_dispatch: # 允许手动按钮触发
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Dependencies
+        run: |
+          pip install requests
+
+      - name: 🤖 Update Data (AI Agent)
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: python update_data.py
+
+      - name: 🏗️ Rebuild Website (pSEO)
+        run: python generate.py
+
+      - name: 💾 Commit & Push Changes
+        run: |
+          git config --global user.name "Tiandao Bot"
+          git config --global user.email "bot@ii-x.com"
+          git add tools.csv dist/
+          git commit -m "Auto-update: $(date +'%Y-%m-%d')" || echo "No changes to commit"
+          git push
