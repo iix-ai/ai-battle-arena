@@ -2,22 +2,23 @@ import csv
 import os
 import json
 import datetime
+import random
 
 # ==========================================
-# 1. 帝国级配置 (Empire Configuration)
+# 1. 帝国级配置 (Configuration)
 # ==========================================
 CSV_FILE = 'tools.csv'
 OUTPUT_DIR = 'dist'
-BASE_URL = 'https://compare.ii-x.com' # 您的最终域名
+BASE_URL = 'https://compare.ii-x.com'
 SITE_NAME = 'AI Tool Diff Engine'
 
 # 支持的语言矩阵 (流量扩大5倍)
 LANGUAGES = {
-    'en': {'flag': '🇺🇸', 'title': 'Comparison', 'price': 'Price', 'winner': 'Winner', 'save': 'Save', 'visit': 'Visit Site', 'calc_title': 'ROI Calculator: How much will you save?', 'input_label': 'Months to use:', 'calc_btn': 'Calculate Savings'},
-    'es': {'flag': '🇪🇸', 'title': 'Comparación', 'price': 'Precio', 'winner': 'Ganador', 'save': 'Ahorra', 'visit': 'Visitar Sitio', 'calc_title': 'Calculadora ROI: ¿Cuánto ahorrarás?', 'input_label': 'Meses de uso:', 'calc_btn': 'Calcular Ahorro'},
-    'de': {'flag': '🇩🇪', 'title': 'Vergleich', 'price': 'Preis', 'winner': 'Gewinner', 'save': 'Sparen', 'visit': 'Webseite', 'calc_title': 'ROI-Rechner: Wie viel sparen Sie?', 'input_label': 'Nutzungsmonate:', 'calc_btn': 'Ersparnis berechnen'},
-    'fr': {'flag': '🇫🇷', 'title': 'Comparaison', 'price': 'Prix', 'winner': 'Gagnant', 'save': 'Économisez', 'visit': 'Visiter', 'calc_title': 'Calculateur ROI : Combien économiserez-vous ?', 'input_label': 'Mois d\'utilisation :', 'calc_btn': 'Calculer'},
-    'pt': {'flag': '🇧🇷', 'title': 'Comparação', 'price': 'Preço', 'winner': 'Vencedor', 'save': 'Economize', 'visit': 'Visitar', 'calc_title': 'Calculadora ROI: Quanto você vai economizar?', 'input_label': 'Meses de uso:', 'calc_btn': 'Calcular Economia'}
+    'en': {'flag': '🇺🇸', 'title': 'Comparison', 'price': 'Price', 'winner': 'Winner', 'save': 'Save', 'visit': 'Visit Site', 'calc_title': 'ROI Calculator: How much will you save?', 'input_label': 'Months to use:', 'calc_btn': 'Calculate Savings', 'related': '🔥 People Also Compare'},
+    'es': {'flag': '🇪🇸', 'title': 'Comparación', 'price': 'Precio', 'winner': 'Ganador', 'save': 'Ahorra', 'visit': 'Visitar Sitio', 'calc_title': 'Calculadora ROI: ¿Cuánto ahorrarás?', 'input_label': 'Meses de uso:', 'calc_btn': 'Calcular Ahorro', 'related': '🔥 Comparaciones Relacionadas'},
+    'de': {'flag': '🇩🇪', 'title': 'Vergleich', 'price': 'Preis', 'winner': 'Gewinner', 'save': 'Sparen', 'visit': 'Webseite', 'calc_title': 'ROI-Rechner: Wie viel sparen Sie?', 'input_label': 'Nutzungsmonate:', 'calc_btn': 'Ersparnis berechnen', 'related': '🔥 Ähnliche Vergleiche'},
+    'fr': {'flag': '🇫🇷', 'title': 'Comparaison', 'price': 'Prix', 'winner': 'Gagnant', 'save': 'Économisez', 'visit': 'Visiter', 'calc_title': 'Calculateur ROI : Combien économiserez-vous ?', 'input_label': 'Mois d\'utilisation :', 'calc_btn': 'Calculer', 'related': '🔥 Comparaisons Similaires'},
+    'pt': {'flag': '🇧🇷', 'title': 'Comparação', 'price': 'Preço', 'winner': 'Vencedor', 'save': 'Economize', 'visit': 'Visitar', 'calc_title': 'Calculadora ROI: Quanto você vai economizar?', 'input_label': 'Meses de uso:', 'calc_btn': 'Calcular Economia', 'related': '🔥 Também Comparado'}
 }
 
 # ==========================================
@@ -25,7 +26,7 @@ LANGUAGES = {
 # ==========================================
 
 def clean_price(price_str):
-    """清洗价格数据，确保是纯数字"""
+    """清洗价格数据"""
     try:
         return float(str(price_str).replace('$','').replace(',','').strip())
     except:
@@ -40,7 +41,6 @@ def create_svg_chart(name_a, price_a, name_b, price_b):
     h_a, h_b = (pa/max_h)*200, (pb/max_h)*200
     c_a = "#22c55e" if pa < pb else "#ef4444"
     c_b = "#22c55e" if pb < pa else "#ef4444"
-    
     diff = abs(pa - pb)
     
     return f'''
@@ -57,7 +57,7 @@ def create_svg_chart(name_a, price_a, name_b, price_b):
     '''
 
 def create_schema(row, lang):
-    """生成多语言结构化数据，霸占 Google 结果位"""
+    """生成多语言结构化数据"""
     schema = {
         "@context": "https://schema.org",
         "@type": "Product",
@@ -69,8 +69,25 @@ def create_schema(row, lang):
     }
     return json.dumps(schema)
 
+def generate_internal_links(all_rows, current_slug, lang, texts):
+    """生成内链：蜘蛛网结构，链接同语言的其他页面"""
+    others = [r for r in all_rows if r['slug'] != current_slug]
+    if not others: return ""
+    
+    # 随机选 6 个
+    picks = random.sample(others, min(6, len(others)))
+    
+    # 构建 URL 前缀
+    prefix = "" if lang == 'en' else f"/{lang}"
+    
+    links_html = f'<div class="internal-links"><h3>{texts["related"]}</h3><div class="links-grid">'
+    for p in picks:
+        links_html += f'<a href="{prefix}/{p["slug"]}/">{p["tool_a"]} vs {p["tool_b"]}</a>'
+    links_html += '</div></div>'
+    return links_html
+
 def generate_sitemap(urls):
-    """自动生成 sitemap.xml，主动喂给 Google"""
+    """自动生成 sitemap.xml"""
     sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     for url in urls:
         sitemap += f'  <url>\n    <loc>{url}</loc>\n    <lastmod>{datetime.date.today()}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>\n'
@@ -88,7 +105,6 @@ def main():
     all_rows = []
     generated_urls = []
 
-    # 读取数据
     try:
         with open(CSV_FILE, 'r', encoding='utf-8') as f:
             reader = csv.DictReader(f)
@@ -103,39 +119,35 @@ def main():
         print(f"🌍 Starting build for language: {lang.upper()}")
         
         # 语言子目录
-        lang_dir = os.path.join(OUTPUT_DIR, lang) if lang != 'en' else OUTPUT_DIR # 英语在根目录
+        lang_dir = os.path.join(OUTPUT_DIR, lang) if lang != 'en' else OUTPUT_DIR
         if not os.path.exists(lang_dir): os.makedirs(lang_dir)
 
-        # 生成该语言的首页索引
         index_links = ""
         
         for row in all_rows:
-            # 数据处理
             pa, pb = clean_price(row['price_a']), clean_price(row['price_b'])
             diff = abs(pa - pb)
-            winner_tool = row['winner']
             
-            # 生成各个组件
             svg_chart = create_svg_chart(row['tool_a'], row['price_a'], row['tool_b'], row['price_b'])
             schema_json = create_schema(row, lang)
+            internal_links = generate_internal_links(all_rows, row['slug'], lang, texts)
             
-            # 路径处理
             slug = row['slug']
             page_dir = os.path.join(lang_dir, slug)
             if not os.path.exists(page_dir): os.makedirs(page_dir)
             
-            # 收集 Sitemap URL
+            # Sitemap URL
             full_url = f"{BASE_URL}/{slug}/" if lang == 'en' else f"{BASE_URL}/{lang}/{slug}/"
             generated_urls.append(full_url)
 
             # 首页链接卡片
+            prefix = "" if lang == 'en' else f"/{lang}"
             index_links += f'''
-            <a href="{slug}/" class="card">
+            <a href="{prefix}/{slug}/" class="card">
                 <div class="card-head">{row['tool_a']} <span style="opacity:0.5">vs</span> {row['tool_b']}</div>
                 <div class="card-win">{texts['winner']}: {row['winner']}</div>
             </a>'''
 
-            # === HTML 模版 (SaaS 级 + 交互计算器) ===
             html = f"""
 <!DOCTYPE html>
 <html lang="{lang}">
@@ -152,52 +164,42 @@ def main():
         .nav {{ background: white; padding: 15px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }}
         .logo {{ font-weight: 900; font-size: 1.2rem; text-decoration: none; color: var(--primary); }}
         .btn-login {{ font-size: 0.9rem; color: #64748b; text-decoration: none; font-weight: 600; }}
-        
         .container {{ max-width: 800px; margin: 0 auto; padding: 20px; }}
         .header {{ text-align: center; margin: 40px 0; }}
         .badge {{ background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 99px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }}
         h1 {{ font-size: 2.8rem; letter-spacing: -1px; margin: 15px 0; }}
-        
-        /* 交互计算器样式 */
         .calculator {{ background: #1e293b; color: white; padding: 30px; border-radius: 16px; margin: 40px 0; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }}
         .calc-flex {{ display: flex; gap: 20px; align-items: flex-end; }}
         .calc-input {{ flex: 1; }}
         .calc-input label {{ display: block; font-size: 0.9rem; margin-bottom: 8px; opacity: 0.8; }}
         .calc-input input {{ width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 1.1rem; }}
         .calc-res {{ font-size: 1.5rem; font-weight: 800; color: #4ade80; margin-top: 20px; display: none; }}
-        
         .chart-box {{ margin: 40px 0; }}
         .vs-table {{ width: 100%; background: white; border-radius: 12px; border-collapse: collapse; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }}
         .vs-table td {{ padding: 20px; border-bottom: 1px solid #f1f5f9; }}
-        .vs-table tr:last-child td {{ border-bottom: none; }}
-        
         .cta-box {{ text-align: center; margin-top: 50px; }}
         .btn-main {{ background: var(--accent); color: white; padding: 18px 40px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 1.2rem; display: inline-block; transition: 0.2s; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2); }}
         .btn-main:hover {{ transform: translateY(-2px); box-shadow: 0 15px 30px rgba(37, 99, 235, 0.3); }}
+        /* 内链样式 */
+        .internal-links {{ margin-top: 60px; padding-top: 30px; border-top: 2px solid #e2e8f0; }}
+        .internal-links h3 {{ font-size: 1.1rem; margin-bottom: 20px; font-weight: 700; }}
+        .links-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }}
+        .links-grid a {{ background: white; padding: 10px 15px; border-radius: 6px; text-decoration: none; color: #475569; font-size: 0.9rem; border: 1px solid #e2e8f0; transition: 0.2s; }}
+        .links-grid a:hover {{ border-color: var(--accent); color: var(--accent); }}
     </style>
 </head>
 <body>
-    <!-- SaaS 伪装导航栏 -->
     <nav class="nav">
         <a href="/" class="logo">⚡ {SITE_NAME}</a>
-        <div>
-            <span style="margin-right: 15px">{texts['flag']}</span>
-            <a href="#" class="btn-login">Log In</a>
-        </div>
+        <div><span style="margin-right: 15px">{texts['flag']}</span><a href="#" class="btn-login">Log In</a></div>
     </nav>
-
     <div class="container">
         <div class="header">
             <span class="badge">Live Data 2026</span>
             <h1>{row['tool_a']} <span style="color:#cbd5e1">vs</span> {row['tool_b']}</h1>
             <p>Data-driven analysis for decision makers.</p>
         </div>
-
-        <div class="chart-box">
-            {svg_chart}
-        </div>
-
-        <!-- 核心武器：JS 交互计算器 -->
+        <div class="chart-box">{svg_chart}</div>
         <div class="calculator">
             <h3>🧮 {texts['calc_title']}</h3>
             <div class="calc-flex">
@@ -209,7 +211,6 @@ def main():
             </div>
             <div id="result" class="calc-res"></div>
         </div>
-
         <script>
             function calculate() {{
                 const months = document.getElementById('months').value;
@@ -219,23 +220,21 @@ def main():
                 document.getElementById('result').innerText = '{texts['save']} $' + total + '!';
             }}
         </script>
-
         <table class="vs-table">
             <tr><td><strong>{texts['price']}</strong></td><td style="color:var(--accent); font-weight:bold">${row['price_a']}</td><td>${row['price_b']}</td></tr>
             <tr><td><strong>Score</strong></td><td>{row['score_a']}/5.0</td><td>{row['score_b']}/5.0</td></tr>
             <tr><td><strong>Feature</strong></td><td>{row['feature_a']}</td><td>{row['feature_b']}</td></tr>
         </table>
-
         <div class="cta-box">
             <h2 style="margin-bottom: 20px">{texts['winner']}: {row['winner']}</h2>
             <a href="{row['link']}" class="btn-main">👉 {texts['visit']} {row['winner']}</a>
             <p style="margin-top:20px; font-size:0.8rem; color:#94a3b8">Official Affiliate Partner</p>
         </div>
+        {internal_links}
     </div>
 </body>
 </html>
             """
-            
             with open(os.path.join(page_dir, 'index.html'), 'w', encoding='utf-8') as f:
                 f.write(html)
 
@@ -244,9 +243,8 @@ def main():
         with open(os.path.join(lang_dir, 'index.html'), 'w', encoding='utf-8') as f:
             f.write(lang_home_html)
 
-    # 最后生成 Sitemap
     generate_sitemap(generated_urls)
-    print("\n🚀 [帝国版] 构建完成！多语言 + 计算器 + Sitemap 已就绪。")
+    print("\n🚀 [V5.0 终极融合版] 构建完成！多语言 + 计算器 + 内链 + Sitemap 已就绪。")
 
 if __name__ == "__main__":
     main()
