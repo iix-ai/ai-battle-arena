@@ -12,42 +12,52 @@ OUTPUT_DIR = 'dist'
 BASE_URL = 'https://compare.ii-x.com'
 SITE_NAME = 'AI Tool Diff Engine'
 
-# 多语言矩阵 (含计算器和邮件文案)
+# 恢复 5 国语言矩阵 + 恢复邮件/计算器文案
 LANGUAGES = {
     'en': {
-        'flag': '🇺🇸', 'title': 'Comparison', 'price': 'Monthly Cost', 'winner': 'Winner', 
+        'flag': '🇺🇸', 'title': 'VS', 'price': 'Monthly Cost', 'winner': 'Winner', 
         'save': 'Yearly Savings', 'visit': 'Get Deal', 
         'calc_title': '💰 ROI Calculator', 'input_label': 'Team Size:', 'calc_btn': 'Calculate Savings',
         'email_title': 'Download Full 2026 AI Report', 'email_desc': 'Get the PDF with 50+ tool comparisons.', 'email_btn': 'Send to me',
-        'related': '🔥 People Also Compare'
+        'related': '🔥 People Also Compare',
+        'badge_value': '🏆 Best Value', 'badge_power': '🚀 Top Performance',
+        'verdict_intro': 'Our Verdict:', 'verdict_value': 'Great for startups & freelancers.', 'verdict_power': 'Best for large enterprises.'
     },
     'es': {
-        'flag': '🇪🇸', 'title': 'Comparación', 'price': 'Costo Mensual', 'winner': 'Ganador', 
+        'flag': '🇪🇸', 'title': 'VS', 'price': 'Costo Mensual', 'winner': 'Ganador', 
         'save': 'Ahorro Anual', 'visit': 'Ver Oferta', 
         'calc_title': '💰 Calculadora ROI', 'input_label': 'Equipo:', 'calc_btn': 'Calcular', 
         'email_title': 'Descargar Reporte PDF', 'email_desc': 'Comparativa de 50 herramientas.', 'email_btn': 'Enviar',
-        'related': '🔥 Comparaciones Relacionadas'
+        'related': '🔥 Comparaciones Relacionadas',
+        'badge_value': '🏆 Mejor Valor', 'badge_power': '🚀 Máxima Potencia',
+        'verdict_intro': 'Veredicto:', 'verdict_value': 'Ideal para startups.', 'verdict_power': 'Para grandes empresas.'
     },
     'de': {
-        'flag': '🇩🇪', 'title': 'Vergleich', 'price': 'Preis', 'winner': 'Gewinner', 
+        'flag': '🇩🇪', 'title': 'VS', 'price': 'Preis', 'winner': 'Gewinner', 
         'save': 'Sparen', 'visit': 'Webseite', 
         'calc_title': 'ROI-Rechner', 'input_label': 'Teamgröße:', 'calc_btn': 'Berechnen', 
         'email_title': 'Bericht herunterladen', 'email_desc': 'PDF mit 50+ Tools.', 'email_btn': 'Senden',
-        'related': '🔥 Ähnliche Vergleiche'
+        'related': '🔥 Ähnliche Vergleiche',
+        'badge_value': '🏆 Bester Wert', 'badge_power': '🚀 Top Leistung',
+        'verdict_intro': 'Urteil:', 'verdict_value': 'Ideal für Startups.', 'verdict_power': 'Für große Unternehmen.'
     },
     'fr': {
-        'flag': '🇫🇷', 'title': 'Comparaison', 'price': 'Prix', 'winner': 'Gagnant', 
+        'flag': '🇫🇷', 'title': 'VS', 'price': 'Prix', 'winner': 'Gagnant', 
         'save': 'Économisez', 'visit': 'Visiter', 
         'calc_title': 'Calculateur ROI', 'input_label': 'Équipe :', 'calc_btn': 'Calculer', 
         'email_title': 'Télécharger le rapport', 'email_desc': 'PDF avec 50+ outils.', 'email_btn': 'Envoyer',
-        'related': '🔥 Comparaisons Similaires'
+        'related': '🔥 Comparaisons Similaires',
+        'badge_value': '🏆 Meilleure Valeur', 'badge_power': '🚀 Haute Performance',
+        'verdict_intro': 'Verdict:', 'verdict_value': 'Idéal pour les startups.', 'verdict_power': 'Pour les grandes entreprises.'
     },
     'pt': {
-        'flag': '🇧🇷', 'title': 'Comparação', 'price': 'Preço', 'winner': 'Vencedor', 
+        'flag': '🇧🇷', 'title': 'VS', 'price': 'Preço', 'winner': 'Vencedor', 
         'save': 'Economize', 'visit': 'Visitar', 
         'calc_title': 'Calculadora ROI', 'input_label': 'Equipe:', 'calc_btn': 'Calcular', 
         'email_title': 'Baixar Relatório', 'email_desc': 'PDF com 50+ ferramentas.', 'email_btn': 'Enviar',
-        'related': '🔥 Também Comparado'
+        'related': '🔥 Também Comparado',
+        'badge_value': '🏆 Melhor Valor', 'badge_power': '🚀 Desempenho Máximo',
+        'verdict_intro': 'Veredito:', 'verdict_value': 'Ideal para startups.', 'verdict_power': 'Para grandes empresas.'
     }
 }
 
@@ -63,18 +73,16 @@ def clean_price(price_str):
         return 0.0
 
 def create_svg_chart(name_a, price_a, name_b, price_b):
-    """生成带有语义化标签的高端 SVG 图表"""
+    """生成带有语义化标签的高端 SVG 图表 (V7.0特性)"""
     pa, pb = clean_price(price_a), clean_price(price_b)
     if pa == 0 and pb == 0: return ""
 
     max_h = max(pa, pb) * 1.2
-    h_a = (pa/max_h)*200
-    h_b = (pb/max_h)*200
+    h_a = (pa/max_h)*200, (pb/max_h)*200
     c_a = "#22c55e" if pa < pb else "#ef4444"
     c_b = "#22c55e" if pb < pa else "#ef4444"
     diff = abs(pa - pb)
     
-    # 颜色解释: 绿色便宜, 红色贵
     return f'''
     <svg width="100%" height="280" viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" style="background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05); padding:20px;">
         <title id="title">Price Chart: {name_a} vs {name_b}</title>
@@ -102,31 +110,48 @@ def create_schema(row, lang):
     return json.dumps(schema)
 
 def generate_internal_links(all_rows, current_slug, lang, texts):
-    """生成内链：蜘蛛网结构，链接同语言的其他页面"""
+    """生成内链：蜘蛛网结构"""
     others = [r for r in all_rows if r['slug'] != current_slug]
     if not others: return ""
-    
-    # 随机选 6 个
     picks = random.sample(others, min(6, len(others)))
-    
-    # 构建 URL 前缀
     prefix = "" if lang == 'en' else f"/{lang}"
-    
     links_html = f'<div class="internal-links"><h3>{texts["related"]}</h3><div class="links-grid">'
     for p in picks:
         links_html += f'<a href="{prefix}/{p["slug"]}/">{p["tool_a"]} vs {p["tool_b"]}</a>'
     links_html += '</div></div>'
     return links_html
 
-def generate_sitemap(urls):
-    """自动生成 sitemap.xml"""
+def generate_sitemap_and_robots(urls):
+    """同时生成 sitemap.xml 和 robots.txt (V7.0特性)"""
     sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     for url in urls:
-        sitemap += f'  <url>\n    <loc>{url}</loc>\n    <lastmod>{datetime.date.today()}</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>0.8</priority>\n  </url>\n'
+        sitemap += f'  <url>\n    <loc>{url}</loc>\n    <lastmod>{datetime.date.today()}</lastmod>\n    <changefreq>daily</changefreq>\n  </url>\n'
     sitemap += '</urlset>'
     with open(os.path.join(OUTPUT_DIR, 'sitemap.xml'), 'w', encoding='utf-8') as f:
         f.write(sitemap)
-    print("✅ [SEO] sitemap.xml Generated")
+    
+    robots = f"User-agent: *\nAllow: /\nSitemap: {BASE_URL}/sitemap.xml"
+    with open(os.path.join(OUTPUT_DIR, 'robots.txt'), 'w', encoding='utf-8') as f:
+        f.write(robots)
+    print("✅ [SEO] sitemap.xml & robots.txt Generated")
+
+def determine_verdict(row, texts):
+    """【V7.0核心】智能裁决逻辑 (Smart Verdict) - 拒绝一面倒"""
+    pa = clean_price(row['price_a'])
+    pb = clean_price(row['price_b'])
+    price_diff = abs(pa - pb)
+    
+    # 逻辑：便宜的叫 Best Value，贵的叫 Top Performance
+    if pa < pb:
+        badge = texts['badge_value']
+        reason = f"{texts['save']} <strong>${price_diff * 12}</strong>/year. {texts['verdict_value']}"
+        winner_class = "winner-value"
+    else:
+        badge = texts['badge_power']
+        reason = texts['verdict_power']
+        winner_class = "winner-power"
+        
+    return badge, reason, winner_class, price_diff * 12
 
 # ==========================================
 # 3. 页面生成主逻辑
@@ -134,55 +159,43 @@ def generate_sitemap(urls):
 def main():
     if not os.path.exists(OUTPUT_DIR): os.makedirs(OUTPUT_DIR)
     
-    all_rows = []
-    generated_urls = []
-
     try:
-        with open(CSV_FILE, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                all_rows.append(row)
+        all_rows = list(csv.DictReader(open(CSV_FILE, 'r', encoding='utf-8')))
     except:
         print("❌ CSV Not Found!")
         return
 
-    # 循环语言 -> 循环数据 -> 生成页面
+    generated_urls = [BASE_URL]
+    
+    # 恢复 5 国语言循环 (V6.0特性)
     for lang, texts in LANGUAGES.items():
-        print(f"🌍 Starting build for language: {lang.upper()}")
-        
-        # 语言子目录
+        print(f"🌍 Building: {lang.upper()}")
         lang_dir = os.path.join(OUTPUT_DIR, lang) if lang != 'en' else OUTPUT_DIR
         if not os.path.exists(lang_dir): os.makedirs(lang_dir)
-
-        index_links = ""
         
+        index_links = ""
+
         for row in all_rows:
-            pa, pb = clean_price(row['price_a']), clean_price(row['price_b'])
-            # 创造性数据：简单的 ROI 算法 (假设差价就是节省)
-            price_diff = abs(pa - pb)
-            yearly_save = price_diff * 12
+            # 1. 智能裁决 (V7.0)
+            badge, reason, win_class, yearly_save = determine_verdict(row, texts)
             
+            # 2. 生成组件
             svg_chart = create_svg_chart(row['tool_a'], row['price_a'], row['tool_b'], row['price_b'])
             schema_json = create_schema(row, lang)
+            prefix = "" if lang == 'en' else f"/{lang}"
             internal_links = generate_internal_links(all_rows, row['slug'], lang, texts)
             
             slug = row['slug']
             page_dir = os.path.join(lang_dir, slug)
             if not os.path.exists(page_dir): os.makedirs(page_dir)
             
-            # Sitemap URL
-            full_url = f"{BASE_URL}/{slug}/" if lang == 'en' else f"{BASE_URL}/{lang}/{slug}/"
+            full_url = f"{BASE_URL}{prefix}/{slug}/"
             generated_urls.append(full_url)
 
-            # 首页链接卡片 (累加)
-            prefix = "" if lang == 'en' else f"/{lang}"
-            index_links += f'''
-            <a href="{prefix}/{slug}/" class="card">
-                <div class="card-head">{row['tool_a']} <span style="opacity:0.5">vs</span> {row['tool_b']}</div>
-                <div class="card-win">{texts['winner']}: {row['winner']}</div>
-            </a>'''
+            # 首页卡片
+            index_links += f'''<a href="{prefix}/{slug}/" class="card"><div class="card-head">{row['tool_a']} <span style="opacity:0.5">vs</span> {row['tool_b']}</div><div class="card-badge">{badge}</div></a>'''
 
-            # === HTML 模版 ===
+            # === 终极 HTML 模版 (包含所有功能) ===
             html = f"""
 <!DOCTYPE html>
 <html lang="{lang}">
@@ -190,43 +203,49 @@ def main():
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{row['tool_a']} vs {row['tool_b']} | {SITE_NAME}</title>
-    <meta name="description" content="{texts['title']}: {row['tool_a']} vs {row['tool_b']}. Live data analysis.">
+    <meta name="description" content="{texts['title']}: {row['tool_a']} vs {row['tool_b']}. {texts['winner']}: {row['winner']}.">
     <script type="application/ld+json">{schema_json}</script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <style>
         :root {{ --primary: #000; --accent: #2563eb; --bg: #f8fafc; }}
-        body {{ font-family: 'Inter', sans-serif; background: var(--bg); color: #1e293b; margin: 0; padding-bottom: 50px; }}
+        body {{ font-family: 'Inter', sans-serif; background: var(--bg); color: #1e293b; margin: 0; padding-bottom: 50px; line-height: 1.6; }}
         .nav {{ background: white; padding: 15px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }}
         .logo {{ font-weight: 900; font-size: 1.2rem; text-decoration: none; color: var(--primary); }}
         .btn-login {{ font-size: 0.9rem; color: #64748b; text-decoration: none; font-weight: 600; }}
+        
         .container {{ max-width: 800px; margin: 0 auto; padding: 20px; }}
         .header {{ text-align: center; margin: 40px 0; }}
         .badge {{ background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 99px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }}
-        h1 {{ font-size: 2.8rem; letter-spacing: -1px; margin: 15px 0; }}
+        h1 {{ font-size: 2.5rem; letter-spacing: -1px; margin: 15px 0; }}
         
-        /* 交互计算器 */
+        .chart-box {{ margin: 40px 0; }}
+        
+        /* 智能裁决卡片 (V7.0) */
+        .verdict-box {{ padding: 25px; border-radius: 12px; margin: 30px 0; border-left: 5px solid; }}
+        .winner-value {{ background: #f0fdf4; border-color: #22c55e; }} 
+        .winner-power {{ background: #fdf2f8; border-color: #db2777; }} 
+        .verdict-title {{ font-weight: 800; font-size: 1.2rem; margin-bottom: 10px; display: block; }}
+        
+        /* 交互计算器 (V6.0) */
         .calculator {{ background: #1e293b; color: white; padding: 30px; border-radius: 16px; margin: 40px 0; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }}
         .calc-flex {{ display: flex; gap: 20px; align-items: flex-end; }}
         .calc-input {{ flex: 1; }}
         .calc-input label {{ display: block; font-size: 0.9rem; margin-bottom: 8px; opacity: 0.8; }}
         .calc-input input {{ width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 1.1rem; }}
         .calc-res {{ font-size: 1.5rem; font-weight: 800; color: #4ade80; margin-top: 20px; display: none; }}
-        
-        .chart-box {{ margin: 40px 0; }}
+
         .vs-table {{ width: 100%; background: white; border-radius: 12px; border-collapse: collapse; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }}
         .vs-table td {{ padding: 20px; border-bottom: 1px solid #f1f5f9; }}
+        
         .cta-box {{ text-align: center; margin-top: 50px; }}
         .btn-main {{ background: var(--accent); color: white; padding: 18px 40px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 1.2rem; display: inline-block; transition: 0.2s; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2); }}
-        .btn-main:hover {{ transform: translateY(-2px); box-shadow: 0 15px 30px rgba(37, 99, 235, 0.3); }}
         
-        /* 邮件捕获 */
+        /* 邮件捕获 (V6.0) */
         .email-box {{ background: #fff; border: 2px dashed #cbd5e1; padding: 30px; border-radius: 12px; margin-top: 50px; text-align: center; }}
         .email-input {{ padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; width: 60%; margin-right: 10px; }}
         .email-btn {{ padding: 10px 20px; background: #0f172a; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }}
         
-        /* 内链 */
         .internal-links {{ margin-top: 60px; padding-top: 30px; border-top: 2px solid #e2e8f0; }}
-        .internal-links h3 {{ font-size: 1.1rem; margin-bottom: 20px; font-weight: 700; }}
         .links-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }}
         .links-grid a {{ background: white; padding: 10px 15px; border-radius: 6px; text-decoration: none; color: #475569; font-size: 0.9rem; border: 1px solid #e2e8f0; transition: 0.2s; }}
         .links-grid a:hover {{ border-color: var(--accent); color: var(--accent); }}
@@ -246,7 +265,13 @@ def main():
         
         <div class="chart-box">{svg_chart}</div>
         
-        <!-- ROI 计算器 -->
+        <!-- 智能裁决区 (V7.0) -->
+        <div class="verdict-box {win_class}">
+            <span class="verdict-title">{badge}</span>
+            <p>{texts['verdict_intro']} <strong>{reason}</strong></p>
+        </div>
+
+        <!-- ROI 计算器 (V6.0) -->
         <div class="calculator">
             <h3>🧮 {texts['calc_title']}</h3>
             <div class="calc-flex">
@@ -261,8 +286,7 @@ def main():
         <script>
             function calculate() {{
                 const months = document.getElementById('months').value;
-                const yearlySave = {yearly_save}; // Python算的年省金额
-                // 简单的估算：月省 = 年省 / 12 * 用户输入的月数
+                const yearlySave = {yearly_save};
                 const total = (yearlySave / 12) * months;
                 document.getElementById('result').style.display = 'block';
                 document.getElementById('result').innerText = '{texts['save']} $' + total.toFixed(0) + '!';
@@ -281,7 +305,7 @@ def main():
             <p style="margin-top:20px; font-size:0.8rem; color:#94a3b8">Official Affiliate Partner</p>
         </div>
 
-        <!-- 邮件捕获 -->
+        <!-- 邮件捕获 (V6.0) -->
         <div class="email-box">
             <h3>{texts['email_title']}</h3>
             <p>{texts['email_desc']}</p>
@@ -300,14 +324,14 @@ def main():
             with open(os.path.join(page_dir, 'index.html'), 'w', encoding='utf-8') as f:
                 f.write(html)
 
-        # 生成该语言的首页
-        lang_home_html = f"""<!DOCTYPE html><html lang="{lang}"><head><meta charset="UTF-8"><title>{SITE_NAME} ({lang.upper()})</title><style>body{{font-family:sans-serif;max-width:800px;margin:0 auto;padding:40px;background:#f8fafc}}.grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:15px}}.card{{background:white;padding:20px;border:1px solid #e2e8f0;border-radius:8px;text-decoration:none;color:inherit;display:block}}.card:hover{{border-color:#2563eb}}.card-head{{font-weight:bold;margin-bottom:5px}}.card-win{{font-size:0.8rem;color:#22c55e}}</style></head><body><h1>🌐 {SITE_NAME} [{texts['flag']}]</h1><div class="grid">{index_links}</div></body></html>"""
+        # 首页生成 (SaaS 风格)
+        lang_home_html = f"""<!DOCTYPE html><html lang="{lang}"><head><meta charset="UTF-8"><title>{SITE_NAME} ({lang.upper()})</title><style>body{{font-family:sans-serif;max-width:900px;margin:0 auto;padding:40px;background:#f8fafc}}.grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:15px}}.card{{background:white;padding:20px;border:1px solid #e2e8f0;border-radius:8px;text-decoration:none;color:inherit;display:block}}.card:hover{{border-color:#2563eb}}.card-head{{font-weight:bold;margin-bottom:5px}}.card-badge{{font-size:0.8rem;color:#22c55e;font-weight:600}}</style></head><body><h1>⚡ {SITE_NAME} [{texts['flag']}]</h1><div class="grid">{index_links}</div></body></html>"""
         with open(os.path.join(lang_dir, 'index.html'), 'w', encoding='utf-8') as f:
             f.write(lang_home_html)
 
-    # 最后生成 Sitemap
-    generate_sitemap(generated_urls)
-    print("\n🚀 [V6.0 终极完整版] 构建完成！多语言 + 计算器 + 邮件 + 内链 + Sitemap 已就绪。")
+    # 关键：生成 Robots.txt 和 Sitemap
+    generate_sitemap_and_robots(generated_urls)
+    print("\n🚀 [V7.1 终极全家桶] 部署完成。包含：5国语言、计算器、智能裁决、Sitemap、Robots。")
 
 if __name__ == "__main__":
     main()
