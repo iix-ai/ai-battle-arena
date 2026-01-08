@@ -24,8 +24,8 @@ try:
 except:
     CONFIG = DEFAULT_CONFIG
 
-# 多语言矩阵
-LANGUAGES = {
+# 变量名统一修正为 TRANS (之前错误定义为 LANGUAGES)
+TRANS = {
     'en': {
         'flag': '🇺🇸', 'title': 'VS', 'price': 'Monthly Cost', 'winner': 'Winner', 
         'save': 'Yearly Savings', 'visit': 'Get Deal', 
@@ -33,7 +33,8 @@ LANGUAGES = {
         'email_title': 'Download Full 2026 AI Report', 'email_desc': 'Get the PDF with 50+ tool comparisons.', 'email_btn': 'Send to me',
         'related': '🔥 People Also Compare',
         'badge_value': '🏆 Best Value', 'badge_power': '🚀 Top Performance',
-        'verdict_intro': 'Our Verdict:', 'verdict_value': 'Great for startups & freelancers.', 'verdict_power': 'Best for large enterprises.'
+        'verdict_intro': 'Our Verdict:', 'verdict_value': 'Great for startups & freelancers.', 'verdict_power': 'Best for large enterprises.',
+        'pros': 'Pros', 'cons': 'Cons'
     },
     'es': {
         'flag': '🇪🇸', 'title': 'VS', 'price': 'Costo Mensual', 'winner': 'Ganador', 
@@ -42,7 +43,8 @@ LANGUAGES = {
         'email_title': 'Descargar Reporte PDF', 'email_desc': 'Comparativa de 50 herramientas.', 'email_btn': 'Enviar',
         'related': '🔥 Comparaciones Relacionadas',
         'badge_value': '🏆 Mejor Valor', 'badge_power': '🚀 Máxima Potencia',
-        'verdict_intro': 'Veredicto:', 'verdict_value': 'Ideal para startups.', 'verdict_power': 'Para grandes empresas.'
+        'verdict_intro': 'Veredicto:', 'verdict_value': 'Ideal para startups.', 'verdict_power': 'Para grandes empresas.',
+        'pros': 'Pros', 'cons': 'Contras'
     },
     'de': {
         'flag': '🇩🇪', 'title': 'VS', 'price': 'Preis', 'winner': 'Gewinner', 
@@ -51,7 +53,8 @@ LANGUAGES = {
         'email_title': 'Bericht herunterladen', 'email_desc': 'PDF mit 50+ Tools.', 'email_btn': 'Senden',
         'related': '🔥 Ähnliche Vergleiche',
         'badge_value': '🏆 Bester Wert', 'badge_power': '🚀 Top Leistung',
-        'verdict_intro': 'Urteil:', 'verdict_value': 'Ideal für Startups.', 'verdict_power': 'Für große Unternehmen.'
+        'verdict_intro': 'Urteil:', 'verdict_value': 'Ideal für Startups.', 'verdict_power': 'Für große Unternehmen.',
+        'pros': 'Vorteile', 'cons': 'Nachteile'
     },
     'fr': {
         'flag': '🇫🇷', 'title': 'VS', 'price': 'Prix', 'winner': 'Gagnant', 
@@ -60,7 +63,8 @@ LANGUAGES = {
         'email_title': 'Télécharger le rapport', 'email_desc': 'PDF avec 50+ outils.', 'email_btn': 'Envoyer',
         'related': '🔥 Comparaisons Similaires',
         'badge_value': '🏆 Meilleure Valeur', 'badge_power': '🚀 Haute Performance',
-        'verdict_intro': 'Verdict:', 'verdict_value': 'Idéal pour les startups.', 'verdict_power': 'Pour les grandes entreprises.'
+        'verdict_intro': 'Verdict:', 'verdict_value': 'Idéal pour les startups.', 'verdict_power': 'Pour les grandes entreprises.',
+        'pros': 'Avantages', 'cons': 'Inconvénients'
     },
     'pt': {
         'flag': '🇧🇷', 'title': 'VS', 'price': 'Preço', 'winner': 'Vencedor', 
@@ -69,9 +73,14 @@ LANGUAGES = {
         'email_title': 'Baixar Relatório', 'email_desc': 'PDF com 50+ ferramentas.', 'email_btn': 'Enviar',
         'related': '🔥 Também Comparado',
         'badge_value': '🏆 Melhor Valor', 'badge_power': '🚀 Desempenho Máximo',
-        'verdict_intro': 'Veredito:', 'verdict_value': 'Ideal para startups.', 'verdict_power': 'Para grandes empresas.'
+        'verdict_intro': 'Veredito:', 'verdict_value': 'Ideal para startups.', 'verdict_power': 'Para grandes empresas.',
+        'pros': 'Prós', 'cons': 'Contras'
     }
 }
+
+# ==========================================
+# 2. 核心功能模块
+# ==========================================
 
 def clean_price(price_str):
     try:
@@ -80,14 +89,19 @@ def clean_price(price_str):
         return 0.0
 
 def create_svg_chart(name_a, price_a, name_b, price_b):
-    pa, pb = clean_price(price_a), clean_price(price_b)
+    pa = clean_price(price_a)
+    pb = clean_price(price_b)
     if pa == 0 and pb == 0: return ""
     max_h = max(pa, pb) * 1.2
+    
+    # 强制转float
     h_a = float((pa / max_h) * 200)
     h_b = float((pb / max_h) * 200)
+    
     c_a = "#22c55e" if pa < pb else "#ef4444"
     c_b = "#22c55e" if pb < pa else "#ef4444"
     diff = abs(pa - pb)
+    
     return f'''
     <svg width="100%" height="280" viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d" style="background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05); padding:20px;">
         <title id="t">{name_a} vs {name_b}</title>
@@ -101,11 +115,12 @@ def create_svg_chart(name_a, price_a, name_b, price_b):
     </svg>'''
 
 def create_schema(row, lang, computed_winner):
+    # 修正：引用 TRANS 而不是 LANGUAGES
     return json.dumps({
         "@context": "https://schema.org",
         "@type": "Product",
         "name": f"{row['tool_a']} vs {row['tool_b']}",
-        "description": f"Comparison: {row['tool_a']} vs {row['tool_b']}. Winner: {computed_winner}.",
+        "description": f"{TRANS[lang]['title']}: {row['tool_a']} vs {row['tool_b']}. Winner: {computed_winner}.",
         "brand": {"@type": "Brand", "name": SITE_NAME},
         "offers": {"@type": "Offer", "price": str(clean_price(row['price_a'])), "priceCurrency": "USD"}
     })
@@ -141,13 +156,11 @@ def determine_verdict(row, texts):
         badge = texts['badge_value']
         reason = f"{texts['save']} <strong>${price_diff * 12}</strong>/year. {texts['verdict_value']}"
         winner_class = "winner-value"
-        # 顺便算出赢家名字
         computed_winner = row['tool_a']
     else:
         badge = texts['badge_power']
         reason = texts['verdict_power']
         winner_class = "winner-power"
-        # 如果B便宜，B赢；如果一样贵，默认A赢（或者您可以改逻辑）
         computed_winner = row['tool_b'] if pb < pa else row['tool_a']
     
     return badge, reason, winner_class, price_diff * 12, computed_winner
@@ -168,17 +181,12 @@ def main():
         t = TRANS.get(lang, TRANS['en'])
         lang_dir = os.path.join(OUTPUT_DIR, lang) if lang != 'en' else OUTPUT_DIR
         if not os.path.exists(lang_dir): os.makedirs(lang_dir)
-        
-        index_html = f"<h1>{CONFIG['site_name']} ({lang.upper()})</h1><div style='display:grid;gap:10px'>"
+        index_links = ""
 
         for row in all_rows:
-            # 核心修复：自动计算赢家，不依赖 CSV 里的 'winner' 列
             badge, reason, win_class, yearly_save, computed_winner = determine_verdict(row, t)
-            
             svg_chart = create_svg_chart(row['tool_a'], row['price_a'], row['tool_b'], row['price_b'])
-            # 传入 computed_winner 而不是 row['winner']
             schema_json = create_schema(row, lang, computed_winner)
-            
             prefix = "" if lang == 'en' else f"/{lang}"
             internal_links = generate_internal_links(all_rows, row['slug'], prefix, t)
             
@@ -188,9 +196,8 @@ def main():
             full_url = f"{BASE_URL}{prefix}/{slug}/"
             generated_urls.append(full_url)
             
-            index_html += f"<a href='{slug}/' style='display:block;padding:10px;background:white;margin-bottom:10px;text-decoration:none;color:#333;border:1px solid #eee'>{row['tool_a']} vs {row['tool_b']}</a>"
+            index_links += f'''<a href="{prefix}/{slug}/" class="card"><div class="card-head">{row['tool_a']} <span style="opacity:0.5">vs</span> {row['tool_b']}</div><div class="card-badge">{badge}</div></a>'''
 
-            # 获取 Pros/Cons
             pros_list = row.get('pros_b', 'Good Value;Easy to Use;Fast').split(';')
             cons_list = row.get('cons_b', 'Limited features;Basic API;Newer').split(';')
 
@@ -200,7 +207,7 @@ def main():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{row['tool_a']} vs {row['tool_b']} | {CONFIG['site_name']}</title>
+    <title>{row['tool_a']} vs {row['tool_b']} | {SITE_NAME}</title>
     <meta name="description" content="{t['title']}: {row['tool_a']} vs {row['tool_b']}. {t['winner']}: {computed_winner}.">
     <script type="application/ld+json">{schema_json}</script>
     <style>
@@ -321,7 +328,7 @@ def main():
             f.write(index_html)
 
     generate_sitemap_and_robots(generated_urls)
-    print("\n🚀 [V9.2] 逻辑闭环。Winner自动计算，不再依赖CSV。")
+    print("\n🚀 [V9.3 赎罪版] 构建完成。变量名统一为 TRANS。")
 
 if __name__ == "__main__":
     main()
