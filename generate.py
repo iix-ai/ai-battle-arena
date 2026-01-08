@@ -24,7 +24,7 @@ try:
 except:
     CONFIG = DEFAULT_CONFIG
 
-# 变量名统一修正为 TRANS (之前错误定义为 LANGUAGES)
+# 变量名：TRANS
 TRANS = {
     'en': {
         'flag': '🇺🇸', 'title': 'VS', 'price': 'Monthly Cost', 'winner': 'Winner', 
@@ -83,6 +83,7 @@ TRANS = {
 # ==========================================
 
 def clean_price(price_str):
+    """清洗价格数据"""
     try:
         return float(str(price_str).replace('$','').replace(',','').strip())
     except:
@@ -94,7 +95,6 @@ def create_svg_chart(name_a, price_a, name_b, price_b):
     if pa == 0 and pb == 0: return ""
     max_h = max(pa, pb) * 1.2
     
-    # 强制转float
     h_a = float((pa / max_h) * 200)
     h_b = float((pb / max_h) * 200)
     
@@ -115,7 +115,6 @@ def create_svg_chart(name_a, price_a, name_b, price_b):
     </svg>'''
 
 def create_schema(row, lang, computed_winner):
-    # 修正：引用 TRANS 而不是 LANGUAGES
     return json.dumps({
         "@context": "https://schema.org",
         "@type": "Product",
@@ -178,17 +177,21 @@ def main():
 
     for lang in target_langs:
         print(f"🌍 Building: {lang.upper()}")
-        t = TRANS.get(lang, TRANS['en'])
+        # 核心修正：这里变量名改回 texts，与 HTML 模板一致
+        texts = TRANS.get(lang, TRANS['en'])
+        
         lang_dir = os.path.join(OUTPUT_DIR, lang) if lang != 'en' else OUTPUT_DIR
         if not os.path.exists(lang_dir): os.makedirs(lang_dir)
         index_links = ""
 
         for row in all_rows:
-            badge, reason, win_class, yearly_save, computed_winner = determine_verdict(row, t)
+            # 核心修正：传入 texts
+            badge, reason, win_class, yearly_save, computed_winner = determine_verdict(row, texts)
+            
             svg_chart = create_svg_chart(row['tool_a'], row['price_a'], row['tool_b'], row['price_b'])
             schema_json = create_schema(row, lang, computed_winner)
             prefix = "" if lang == 'en' else f"/{lang}"
-            internal_links = generate_internal_links(all_rows, row['slug'], prefix, t)
+            internal_links = generate_internal_links(all_rows, row['slug'], prefix, texts)
             
             slug = row['slug']
             page_dir = os.path.join(lang_dir, slug)
@@ -201,6 +204,7 @@ def main():
             pros_list = row.get('pros_b', 'Good Value;Easy to Use;Fast').split(';')
             cons_list = row.get('cons_b', 'Limited features;Basic API;Newer').split(';')
 
+            # 核心修正：模板中使用的所有变量名 ({texts['...']}) 现在都已定义
             html = f"""
 <!DOCTYPE html>
 <html lang="{lang}">
@@ -208,7 +212,7 @@ def main():
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{row['tool_a']} vs {row['tool_b']} | {SITE_NAME}</title>
-    <meta name="description" content="{t['title']}: {row['tool_a']} vs {row['tool_b']}. {t['winner']}: {computed_winner}.">
+    <meta name="description" content="{texts['title']}: {row['tool_a']} vs {row['tool_b']}. {texts['winner']}: {computed_winner}.">
     <script type="application/ld+json">{schema_json}</script>
     <style>
         body {{ font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; color: #1f2937; background: #f9fafb; }}
@@ -238,7 +242,8 @@ def main():
         .email-btn {{ padding: 10px 20px; background: #0f172a; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }}
         .internal-links {{ margin-top: 60px; padding-top: 30px; border-top: 1px solid #e2e8f0; }}
         .links-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }}
-        .links-grid a {{ background: #f1f5f9; padding: 10px; border-radius: 6px; text-decoration: none; color: #475569; font-size: 0.85rem; text-align: center; }}
+        .links-grid a {{ background: #f1f5f9; padding: 10px; border-radius: 6px; text-decoration: none; color: #475569; font-size: 0.9rem; border: 1px solid #e2e8f0; transition: 0.2s; }}
+        .links-grid a:hover {{ border-color: var(--accent); color: var(--accent); }}
     </style>
 </head>
 <body>
@@ -328,7 +333,7 @@ def main():
             f.write(index_html)
 
     generate_sitemap_and_robots(generated_urls)
-    print("\n🚀 [V9.3 赎罪版] 构建完成。变量名统一为 TRANS。")
+    print("\n🚀 [V9.4 遗作版] 生成完成。texts 变量已修复。")
 
 if __name__ == "__main__":
     main()
