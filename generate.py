@@ -5,14 +5,14 @@ import datetime
 import random
 
 # ==========================================
-# 1. 帝国级配置 (Configuration)
+# 1. 帝国级配置
 # ==========================================
 CSV_FILE = 'tools.csv'
 OUTPUT_DIR = 'dist'
 BASE_URL = 'https://compare.ii-x.com'
 SITE_NAME = 'AI Tool Diff Engine'
 
-# 多语言配置
+# 多语言配置 (新增了 AI 点评的标题)
 LANGUAGES = {
     'en': {
         'flag': '🇺🇸', 'title': 'VS', 'price': 'Monthly Cost', 'winner': 'Winner', 
@@ -21,7 +21,8 @@ LANGUAGES = {
         'email_title': 'Download Full 2026 AI Report', 'email_desc': 'Get the PDF with 50+ tool comparisons.', 'email_btn': 'Send to me',
         'related': '🔥 People Also Compare',
         'badge_value': '🏆 Best Value', 'badge_power': '🚀 Top Performance',
-        'verdict_intro': 'Our Verdict:', 'verdict_value': 'Great for startups & freelancers.', 'verdict_power': 'Best for large enterprises.'
+        'verdict_intro': 'Our Verdict:', 'verdict_value': 'Great for startups & freelancers.', 'verdict_power': 'Best for large enterprises.',
+        'ai_insight': '🤖 AI Analyst Insight' # 新增
     },
     'es': {
         'flag': '🇪🇸', 'title': 'VS', 'price': 'Costo Mensual', 'winner': 'Ganador', 
@@ -30,7 +31,8 @@ LANGUAGES = {
         'email_title': 'Descargar Reporte PDF', 'email_desc': 'Comparativa de 50 herramientas.', 'email_btn': 'Enviar',
         'related': '🔥 Comparaciones Relacionadas',
         'badge_value': '🏆 Mejor Valor', 'badge_power': '🚀 Máxima Potencia',
-        'verdict_intro': 'Veredicto:', 'verdict_value': 'Ideal para startups.', 'verdict_power': 'Para grandes empresas.'
+        'verdict_intro': 'Veredicto:', 'verdict_value': 'Ideal para startups.', 'verdict_power': 'Para grandes empresas.',
+        'ai_insight': '🤖 Opinión de la IA' # 新增
     },
     'de': {
         'flag': '🇩🇪', 'title': 'VS', 'price': 'Preis', 'winner': 'Gewinner', 
@@ -39,7 +41,8 @@ LANGUAGES = {
         'email_title': 'Bericht herunterladen', 'email_desc': 'PDF mit 50+ Tools.', 'email_btn': 'Senden',
         'related': '🔥 Ähnliche Vergleiche',
         'badge_value': '🏆 Bester Wert', 'badge_power': '🚀 Top Leistung',
-        'verdict_intro': 'Urteil:', 'verdict_value': 'Ideal für Startups.', 'verdict_power': 'Für große Unternehmen.'
+        'verdict_intro': 'Urteil:', 'verdict_value': 'Ideal für Startups.', 'verdict_power': 'Für große Unternehmen.',
+        'ai_insight': '🤖 KI-Analyse' # 新增
     },
     'fr': {
         'flag': '🇫🇷', 'title': 'VS', 'price': 'Prix', 'winner': 'Gagnant', 
@@ -48,7 +51,8 @@ LANGUAGES = {
         'email_title': 'Télécharger le rapport', 'email_desc': 'PDF avec 50+ outils.', 'email_btn': 'Envoyer',
         'related': '🔥 Comparaisons Similaires',
         'badge_value': '🏆 Meilleure Valeur', 'badge_power': '🚀 Haute Performance',
-        'verdict_intro': 'Verdict:', 'verdict_value': 'Idéal pour les startups.', 'verdict_power': 'Pour les grandes entreprises.'
+        'verdict_intro': 'Verdict:', 'verdict_value': 'Idéal pour les startups.', 'verdict_power': 'Pour les grandes entreprises.',
+        'ai_insight': '🤖 Analyse IA' # 新增
     },
     'pt': {
         'flag': '🇧🇷', 'title': 'VS', 'price': 'Preço', 'winner': 'Vencedor', 
@@ -57,7 +61,8 @@ LANGUAGES = {
         'email_title': 'Baixar Relatório', 'email_desc': 'PDF com 50+ ferramentas.', 'email_btn': 'Enviar',
         'related': '🔥 Também Comparado',
         'badge_value': '🏆 Melhor Valor', 'badge_power': '🚀 Desempenho Máximo',
-        'verdict_intro': 'Veredito:', 'verdict_value': 'Ideal para startups.', 'verdict_power': 'Para grandes empresas.'
+        'verdict_intro': 'Veredito:', 'verdict_value': 'Ideal para startups.', 'verdict_power': 'Para grandes empresas.',
+        'ai_insight': '🤖 Análise de IA' # 新增
     }
 }
 
@@ -66,51 +71,30 @@ LANGUAGES = {
 # ==========================================
 
 def clean_price(price_str):
-    """清洗价格数据"""
     try:
         return float(str(price_str).replace('$','').replace(',','').strip())
     except:
         return 0.0
 
 def create_svg_chart(name_a, price_a, name_b, price_b):
-    """生成 SVG 图表 (修复版：拆分赋值，防止Tuple报错)"""
     pa = clean_price(price_a)
     pb = clean_price(price_b)
-    
-    if pa == 0 and pb == 0: 
-        return ""
-
+    if pa == 0 and pb == 0: return ""
     max_h = max(pa, pb) * 1.2
-    
-    # 核心修复：强制转float，并拆行写，杜绝逗号隐患
     h_a = float((pa / max_h) * 200)
     h_b = float((pb / max_h) * 200)
-    
     c_a = "#22c55e" if pa < pb else "#ef4444"
     c_b = "#22c55e" if pb < pa else "#ef4444"
-    
     diff = abs(pa - pb)
-    
-    return f'''
-    <svg width="100%" height="280" viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" style="background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05); padding:20px;">
-        <title id="title">Price Chart: {name_a} vs {name_b}</title>
-        <desc id="desc">Visual comparison showing {name_a} at ${pa} and {name_b} at ${pb}. Difference is ${diff}.</desc>
-        <rect x="50" y="{250 - h_a}" width="100" height="{h_a}" fill="{c_a}" rx="6" />
-        <text x="100" y="{240 - h_a}" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="18" fill="#374151">${pa}</text>
-        <text x="100" y="270" text-anchor="middle" font-family="sans-serif" fill="#6b7280" font-size="14">{name_a}</text>
-        <rect x="250" y="{250 - h_b}" width="100" height="{h_b}" fill="{c_b}" rx="6" />
-        <text x="300" y="{240 - h_b}" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="18" fill="#374151">${pb}</text>
-        <text x="300" y="270" text-anchor="middle" font-family="sans-serif" fill="#6b7280" font-size="14">{name_b}</text>
-    </svg>
-    '''
+    return f'''<svg width="100%" height="280" viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="t d" style="background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05); padding:20px;"><title id="t">{name_a} vs {name_b}</title><desc id="d">{name_a}: ${pa}, {name_b}: ${pb}. Diff: ${diff}</desc><rect x="50" y="{250 - h_a}" width="100" height="{h_a}" fill="{c_a}" rx="6" /><text x="100" y="{240 - h_a}" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="18" fill="#374151">${pa}</text><text x="100" y="270" text-anchor="middle" font-family="sans-serif" fill="#6b7280" font-size="14">{name_a}</text><rect x="250" y="{250 - h_b}" width="100" height="{h_b}" fill="{c_b}" rx="6" /><text x="300" y="{240 - h_b}" text-anchor="middle" font-family="sans-serif" font-weight="800" font-size="18" fill="#374151">${pb}</text><text x="300" y="270" text-anchor="middle" font-family="sans-serif" fill="#6b7280" font-size="14">{name_b}</text></svg>'''
 
 def create_schema(row, lang):
-    """生成多语言结构化数据"""
+    """生成 JSON-LD"""
     schema = {
         "@context": "https://schema.org",
         "@type": "Product",
         "name": f"{row['tool_a']} vs {row['tool_b']}",
-        "description": f"{LANGUAGES[lang]['title']}: {row['tool_a']} vs {row['tool_b']}. {LANGUAGES[lang]['winner']}: {row['winner']}.",
+        "description": row.get('verdict', f"Comparison of {row['tool_a']} and {row['tool_b']}"), # 这里直接用了 DeepSeek 的 verdict
         "brand": {"@type": "Brand", "name": SITE_NAME},
         "review": {"@type": "Review", "reviewRating": {"@type": "Rating", "ratingValue": "4.9", "bestRating": "5"}, "author": {"@type": "Organization", "name": SITE_NAME}},
         "offers": {"@type": "Offer", "price": str(clean_price(row['price_a'])), "priceCurrency": "USD"}
@@ -118,18 +102,10 @@ def create_schema(row, lang):
     return json.dumps(schema)
 
 def generate_internal_links(all_rows, current_slug, lang, texts):
-    """生成内链"""
     others = [r for r in all_rows if r['slug'] != current_slug]
     if not others: return ""
-    
-    # 防止样本不足报错
-    sample_size = min(6, len(others))
-    if sample_size == 0: return ""
-    
-    picks = random.sample(others, sample_size)
-    
+    picks = random.sample(others, min(6, len(others)))
     prefix = "" if lang == 'en' else f"/{lang}"
-    
     links_html = f'<div class="internal-links"><h3>{texts["related"]}</h3><div class="links-grid">'
     for p in picks:
         links_html += f'<a href="{prefix}/{p["slug"]}/">{p["tool_a"]} vs {p["tool_b"]}</a>'
@@ -137,25 +113,21 @@ def generate_internal_links(all_rows, current_slug, lang, texts):
     return links_html
 
 def generate_sitemap_and_robots(urls):
-    """生成 Sitemap 和 Robots"""
     sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     for url in urls:
         sitemap += f'  <url>\n    <loc>{url}</loc>\n    <lastmod>{datetime.date.today()}</lastmod>\n    <changefreq>daily</changefreq>\n  </url>\n'
     sitemap += '</urlset>'
     with open(os.path.join(OUTPUT_DIR, 'sitemap.xml'), 'w', encoding='utf-8') as f:
         f.write(sitemap)
-    
     robots = f"User-agent: *\nAllow: /\nSitemap: {BASE_URL}/sitemap.xml"
     with open(os.path.join(OUTPUT_DIR, 'robots.txt'), 'w', encoding='utf-8') as f:
         f.write(robots)
     print("✅ [SEO] sitemap.xml & robots.txt Generated")
 
 def determine_verdict(row, texts):
-    """智能裁决逻辑"""
     pa = clean_price(row['price_a'])
     pb = clean_price(row['price_b'])
     price_diff = abs(pa - pb)
-    
     if pa < pb:
         badge = texts['badge_value']
         reason = f"{texts['save']} <strong>${price_diff * 12}</strong>/year. {texts['verdict_value']}"
@@ -164,12 +136,10 @@ def determine_verdict(row, texts):
         badge = texts['badge_power']
         reason = texts['verdict_power']
         winner_class = "winner-power"
-        
     return badge, reason, winner_class, price_diff * 12
 
 def main():
     if not os.path.exists(OUTPUT_DIR): os.makedirs(OUTPUT_DIR)
-    
     try:
         all_rows = list(csv.DictReader(open(CSV_FILE, 'r', encoding='utf-8')))
     except:
@@ -177,34 +147,30 @@ def main():
         return
 
     generated_urls = [BASE_URL]
-    
     target_langs = ['en', 'es', 'de', 'fr', 'pt']
 
     for lang in target_langs:
         print(f"🌍 Building: {lang.upper()}")
         texts = LANGUAGES.get(lang, LANGUAGES['en'])
-        
         lang_dir = os.path.join(OUTPUT_DIR, lang) if lang != 'en' else OUTPUT_DIR
         if not os.path.exists(lang_dir): os.makedirs(lang_dir)
-        
         index_links = ""
 
         for row in all_rows:
             badge, reason, win_class, yearly_save = determine_verdict(row, texts)
             svg_chart = create_svg_chart(row['tool_a'], row['price_a'], row['tool_b'], row['price_b'])
             schema_json = create_schema(row, lang)
-            
             prefix = "" if lang == 'en' else f"/{lang}"
             internal_links = generate_internal_links(all_rows, row['slug'], lang, texts)
-            
             slug = row['slug']
             page_dir = os.path.join(lang_dir, slug)
             if not os.path.exists(page_dir): os.makedirs(page_dir)
-            
             full_url = f"{BASE_URL}{prefix}/{slug}/"
             generated_urls.append(full_url)
-
             index_links += f'''<a href="{prefix}/{slug}/" class="card"><div class="card-head">{row['tool_a']} <span style="opacity:0.5">vs</span> {row['tool_b']}</div><div class="card-badge">{badge}</div></a>'''
+
+            # 获取 DeepSeek 生成的点评 (如果有的话，没有就用默认文案)
+            ai_verdict_text = row.get('verdict', f"Comprehensive comparison of {row['tool_a']} features versus {row['tool_b']}. Updated for 2026 market conditions.")
 
             html = f"""
 <!DOCTYPE html>
@@ -231,6 +197,9 @@ def main():
         .winner-value {{ background: #f0fdf4; border-color: #22c55e; }} 
         .winner-power {{ background: #fdf2f8; border-color: #db2777; }} 
         .verdict-title {{ font-weight: 800; font-size: 1.2rem; margin-bottom: 10px; display: block; }}
+        .ai-insight-box {{ background: #f1f5f9; border: 1px solid #e2e8f0; padding: 20px; border-radius: 12px; margin-bottom: 30px; }}
+        .ai-title {{ display: flex; align-items: center; font-weight: 700; margin-bottom: 10px; color: #475569; }}
+        .ai-title span {{ margin-right: 8px; font-size: 1.2rem; }}
         .calculator {{ background: #1e293b; color: white; padding: 30px; border-radius: 16px; margin: 40px 0; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }}
         .calc-flex {{ display: flex; gap: 20px; align-items: flex-end; }}
         .calc-input {{ flex: 1; }}
@@ -267,6 +236,12 @@ def main():
         <div class="verdict-box {win_class}">
             <span class="verdict-title">{badge}</span>
             <p>{texts['verdict_intro']} <strong>{reason}</strong></p>
+        </div>
+
+        <!-- V8.0 新增：AI 分析师点评区 -->
+        <div class="ai-insight-box">
+            <div class="ai-title"><span>🤖</span> {texts['ai_insight']}</div>
+            <p style="margin:0; font-size:0.95rem; line-height:1.7">{ai_verdict_text}</p>
         </div>
 
         <div class="calculator">
@@ -325,7 +300,7 @@ def main():
             f.write(lang_home_html)
 
     generate_sitemap_and_robots(generated_urls)
-    print("\n🚀 [V7.2 稳健版] 生成完成。无元组错误。")
+    print("\n🚀 [V8.0] 全功能版生成完毕！")
 
 if __name__ == "__main__":
     main()
