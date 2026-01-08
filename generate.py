@@ -5,7 +5,7 @@ import datetime
 import random
 
 # ==========================================
-# 1. 帝国级配置 (Configuration)
+# 1. 帝国级配置
 # ==========================================
 CSV_FILE = 'tools.csv'
 OUTPUT_DIR = 'dist'
@@ -83,7 +83,6 @@ TRANS = {
 # ==========================================
 
 def clean_price(price_str):
-    """清洗价格数据"""
     try:
         return float(str(price_str).replace('$','').replace(',','').strip())
     except:
@@ -177,7 +176,6 @@ def main():
 
     for lang in target_langs:
         print(f"🌍 Building: {lang.upper()}")
-        # 核心修正：这里变量名改回 texts，与 HTML 模板一致
         texts = TRANS.get(lang, TRANS['en'])
         
         lang_dir = os.path.join(OUTPUT_DIR, lang) if lang != 'en' else OUTPUT_DIR
@@ -185,9 +183,7 @@ def main():
         index_links = ""
 
         for row in all_rows:
-            # 核心修正：传入 texts
             badge, reason, win_class, yearly_save, computed_winner = determine_verdict(row, texts)
-            
             svg_chart = create_svg_chart(row['tool_a'], row['price_a'], row['tool_b'], row['price_b'])
             schema_json = create_schema(row, lang, computed_winner)
             prefix = "" if lang == 'en' else f"/{lang}"
@@ -199,12 +195,12 @@ def main():
             full_url = f"{BASE_URL}{prefix}/{slug}/"
             generated_urls.append(full_url)
             
+            # 这里生成了卡片
             index_links += f'''<a href="{prefix}/{slug}/" class="card"><div class="card-head">{row['tool_a']} <span style="opacity:0.5">vs</span> {row['tool_b']}</div><div class="card-badge">{badge}</div></a>'''
 
             pros_list = row.get('pros_b', 'Good Value;Easy to Use;Fast').split(';')
             cons_list = row.get('cons_b', 'Limited features;Basic API;Newer').split(';')
 
-            # 核心修正：模板中使用的所有变量名 ({texts['...']}) 现在都已定义
             html = f"""
 <!DOCTYPE html>
 <html lang="{lang}">
@@ -323,17 +319,18 @@ def main():
 </body>
 </html>
             """
+            
             with open(os.path.join(page_dir, 'index.html'), 'w', encoding='utf-8') as f:
                 f.write(html)
-            
-            index_html += f"<a href='{slug}/' style='display:block;padding:10px;background:white;margin-bottom:10px;text-decoration:none;color:#333;border:1px solid #eee'>{row['tool_a']} vs {row['tool_b']}</a>"
 
-        index_html += "</div>"
+        # 删除了错误的 index_html += ...
+        # 直接生成首页
+        lang_home_html = f"""<!DOCTYPE html><html lang="{lang}"><head><meta charset="UTF-8"><title>{SITE_NAME} ({lang.upper()})</title><style>body{{font-family:sans-serif;max-width:900px;margin:0 auto;padding:40px;background:#f8fafc}}.grid{{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:15px}}.card{{background:white;padding:20px;border:1px solid #e2e8f0;border-radius:8px;text-decoration:none;color:inherit;display:block}}.card:hover{{border-color:#2563eb}}.card-head{{font-weight:bold;margin-bottom:5px}}.card-badge{{font-size:0.8rem;color:#22c55e;font-weight:600}}</style></head><body><h1>⚡ {SITE_NAME} [{texts['flag']}]</h1><div class="grid">{index_links}</div></body></html>"""
         with open(os.path.join(lang_dir, 'index.html'), 'w', encoding='utf-8') as f:
-            f.write(index_html)
+            f.write(lang_home_html)
 
     generate_sitemap_and_robots(generated_urls)
-    print("\n🚀 [V9.4 遗作版] 生成完成。texts 变量已修复。")
+    print("\n🚀 [V9.5] 纯净无错版。变量名统一。")
 
 if __name__ == "__main__":
     main()
