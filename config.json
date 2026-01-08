@@ -1,0 +1,12 @@
+{
+    "site_name": "AI Tool Diff Engine",
+    "base_url": "https://compare.ii-x.com",
+    "niche": "SEO & AI Tools",
+    "currency_symbol": "$",
+    "affiliate_disclosure": "We may earn a commission if you buy through our links.",
+    "languages": ["en", "es"],
+    "seo": {
+      "title_template": "{tool_a} vs {tool_b}: The 2026 Honest Comparison",
+      "desc_template": "Deciding between {tool_a} and {tool_b}? We analyzed pricing, pros, cons, and ratings to help you choose."
+    }
+  }
