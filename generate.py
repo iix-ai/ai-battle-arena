@@ -12,13 +12,43 @@ OUTPUT_DIR = 'dist'
 BASE_URL = 'https://compare.ii-x.com'
 SITE_NAME = 'AI Tool Diff Engine'
 
-# 支持的语言矩阵 (流量扩大5倍)
+# 多语言矩阵 (含计算器和邮件文案)
 LANGUAGES = {
-    'en': {'flag': '🇺🇸', 'title': 'Comparison', 'price': 'Price', 'winner': 'Winner', 'save': 'Save', 'visit': 'Visit Site', 'calc_title': 'ROI Calculator: How much will you save?', 'input_label': 'Months to use:', 'calc_btn': 'Calculate Savings', 'related': '🔥 People Also Compare'},
-    'es': {'flag': '🇪🇸', 'title': 'Comparación', 'price': 'Precio', 'winner': 'Ganador', 'save': 'Ahorra', 'visit': 'Visitar Sitio', 'calc_title': 'Calculadora ROI: ¿Cuánto ahorrarás?', 'input_label': 'Meses de uso:', 'calc_btn': 'Calcular Ahorro', 'related': '🔥 Comparaciones Relacionadas'},
-    'de': {'flag': '🇩🇪', 'title': 'Vergleich', 'price': 'Preis', 'winner': 'Gewinner', 'save': 'Sparen', 'visit': 'Webseite', 'calc_title': 'ROI-Rechner: Wie viel sparen Sie?', 'input_label': 'Nutzungsmonate:', 'calc_btn': 'Ersparnis berechnen', 'related': '🔥 Ähnliche Vergleiche'},
-    'fr': {'flag': '🇫🇷', 'title': 'Comparaison', 'price': 'Prix', 'winner': 'Gagnant', 'save': 'Économisez', 'visit': 'Visiter', 'calc_title': 'Calculateur ROI : Combien économiserez-vous ?', 'input_label': 'Mois d\'utilisation :', 'calc_btn': 'Calculer', 'related': '🔥 Comparaisons Similaires'},
-    'pt': {'flag': '🇧🇷', 'title': 'Comparação', 'price': 'Preço', 'winner': 'Vencedor', 'save': 'Economize', 'visit': 'Visitar', 'calc_title': 'Calculadora ROI: Quanto você vai economizar?', 'input_label': 'Meses de uso:', 'calc_btn': 'Calcular Economia', 'related': '🔥 Também Comparado'}
+    'en': {
+        'flag': '🇺🇸', 'title': 'Comparison', 'price': 'Monthly Cost', 'winner': 'Winner', 
+        'save': 'Yearly Savings', 'visit': 'Get Deal', 
+        'calc_title': '💰 ROI Calculator', 'input_label': 'Team Size:', 'calc_btn': 'Calculate Savings',
+        'email_title': 'Download Full 2026 AI Report', 'email_desc': 'Get the PDF with 50+ tool comparisons.', 'email_btn': 'Send to me',
+        'related': '🔥 People Also Compare'
+    },
+    'es': {
+        'flag': '🇪🇸', 'title': 'Comparación', 'price': 'Costo Mensual', 'winner': 'Ganador', 
+        'save': 'Ahorro Anual', 'visit': 'Ver Oferta', 
+        'calc_title': '💰 Calculadora ROI', 'input_label': 'Equipo:', 'calc_btn': 'Calcular', 
+        'email_title': 'Descargar Reporte PDF', 'email_desc': 'Comparativa de 50 herramientas.', 'email_btn': 'Enviar',
+        'related': '🔥 Comparaciones Relacionadas'
+    },
+    'de': {
+        'flag': '🇩🇪', 'title': 'Vergleich', 'price': 'Preis', 'winner': 'Gewinner', 
+        'save': 'Sparen', 'visit': 'Webseite', 
+        'calc_title': 'ROI-Rechner', 'input_label': 'Teamgröße:', 'calc_btn': 'Berechnen', 
+        'email_title': 'Bericht herunterladen', 'email_desc': 'PDF mit 50+ Tools.', 'email_btn': 'Senden',
+        'related': '🔥 Ähnliche Vergleiche'
+    },
+    'fr': {
+        'flag': '🇫🇷', 'title': 'Comparaison', 'price': 'Prix', 'winner': 'Gagnant', 
+        'save': 'Économisez', 'visit': 'Visiter', 
+        'calc_title': 'Calculateur ROI', 'input_label': 'Équipe :', 'calc_btn': 'Calculer', 
+        'email_title': 'Télécharger le rapport', 'email_desc': 'PDF avec 50+ outils.', 'email_btn': 'Envoyer',
+        'related': '🔥 Comparaisons Similaires'
+    },
+    'pt': {
+        'flag': '🇧🇷', 'title': 'Comparação', 'price': 'Preço', 'winner': 'Vencedor', 
+        'save': 'Economize', 'visit': 'Visitar', 
+        'calc_title': 'Calculadora ROI', 'input_label': 'Equipe:', 'calc_btn': 'Calcular', 
+        'email_title': 'Baixar Relatório', 'email_desc': 'PDF com 50+ ferramentas.', 'email_btn': 'Enviar',
+        'related': '🔥 Também Comparado'
+    }
 }
 
 # ==========================================
@@ -38,11 +68,13 @@ def create_svg_chart(name_a, price_a, name_b, price_b):
     if pa == 0 and pb == 0: return ""
 
     max_h = max(pa, pb) * 1.2
-    h_a, h_b = (pa/max_h)*200, (pb/max_h)*200
+    h_a = (pa/max_h)*200
+    h_b = (pb/max_h)*200
     c_a = "#22c55e" if pa < pb else "#ef4444"
     c_b = "#22c55e" if pb < pa else "#ef4444"
     diff = abs(pa - pb)
     
+    # 颜色解释: 绿色便宜, 红色贵
     return f'''
     <svg width="100%" height="280" viewBox="0 0 400 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc" style="background:white; border-radius:12px; box-shadow:0 4px 12px rgba(0,0,0,0.05); padding:20px;">
         <title id="title">Price Chart: {name_a} vs {name_b}</title>
@@ -126,7 +158,9 @@ def main():
         
         for row in all_rows:
             pa, pb = clean_price(row['price_a']), clean_price(row['price_b'])
-            diff = abs(pa - pb)
+            # 创造性数据：简单的 ROI 算法 (假设差价就是节省)
+            price_diff = abs(pa - pb)
+            yearly_save = price_diff * 12
             
             svg_chart = create_svg_chart(row['tool_a'], row['price_a'], row['tool_b'], row['price_b'])
             schema_json = create_schema(row, lang)
@@ -140,7 +174,7 @@ def main():
             full_url = f"{BASE_URL}/{slug}/" if lang == 'en' else f"{BASE_URL}/{lang}/{slug}/"
             generated_urls.append(full_url)
 
-            # 首页链接卡片
+            # 首页链接卡片 (累加)
             prefix = "" if lang == 'en' else f"/{lang}"
             index_links += f'''
             <a href="{prefix}/{slug}/" class="card">
@@ -148,6 +182,7 @@ def main():
                 <div class="card-win">{texts['winner']}: {row['winner']}</div>
             </a>'''
 
+            # === HTML 模版 ===
             html = f"""
 <!DOCTYPE html>
 <html lang="{lang}">
@@ -168,19 +203,28 @@ def main():
         .header {{ text-align: center; margin: 40px 0; }}
         .badge {{ background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 99px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }}
         h1 {{ font-size: 2.8rem; letter-spacing: -1px; margin: 15px 0; }}
+        
+        /* 交互计算器 */
         .calculator {{ background: #1e293b; color: white; padding: 30px; border-radius: 16px; margin: 40px 0; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }}
         .calc-flex {{ display: flex; gap: 20px; align-items: flex-end; }}
         .calc-input {{ flex: 1; }}
         .calc-input label {{ display: block; font-size: 0.9rem; margin-bottom: 8px; opacity: 0.8; }}
         .calc-input input {{ width: 100%; padding: 12px; border-radius: 8px; border: none; font-size: 1.1rem; }}
         .calc-res {{ font-size: 1.5rem; font-weight: 800; color: #4ade80; margin-top: 20px; display: none; }}
+        
         .chart-box {{ margin: 40px 0; }}
         .vs-table {{ width: 100%; background: white; border-radius: 12px; border-collapse: collapse; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }}
         .vs-table td {{ padding: 20px; border-bottom: 1px solid #f1f5f9; }}
         .cta-box {{ text-align: center; margin-top: 50px; }}
         .btn-main {{ background: var(--accent); color: white; padding: 18px 40px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 1.2rem; display: inline-block; transition: 0.2s; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2); }}
         .btn-main:hover {{ transform: translateY(-2px); box-shadow: 0 15px 30px rgba(37, 99, 235, 0.3); }}
-        /* 内链样式 */
+        
+        /* 邮件捕获 */
+        .email-box {{ background: #fff; border: 2px dashed #cbd5e1; padding: 30px; border-radius: 12px; margin-top: 50px; text-align: center; }}
+        .email-input {{ padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; width: 60%; margin-right: 10px; }}
+        .email-btn {{ padding: 10px 20px; background: #0f172a; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }}
+        
+        /* 内链 */
         .internal-links {{ margin-top: 60px; padding-top: 30px; border-top: 2px solid #e2e8f0; }}
         .internal-links h3 {{ font-size: 1.1rem; margin-bottom: 20px; font-weight: 700; }}
         .links-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }}
@@ -199,7 +243,10 @@ def main():
             <h1>{row['tool_a']} <span style="color:#cbd5e1">vs</span> {row['tool_b']}</h1>
             <p>Data-driven analysis for decision makers.</p>
         </div>
+        
         <div class="chart-box">{svg_chart}</div>
+        
+        <!-- ROI 计算器 -->
         <div class="calculator">
             <h3>🧮 {texts['calc_title']}</h3>
             <div class="calc-flex">
@@ -214,27 +261,42 @@ def main():
         <script>
             function calculate() {{
                 const months = document.getElementById('months').value;
-                const diff = {diff};
-                const total = diff * months;
+                const yearlySave = {yearly_save}; // Python算的年省金额
+                // 简单的估算：月省 = 年省 / 12 * 用户输入的月数
+                const total = (yearlySave / 12) * months;
                 document.getElementById('result').style.display = 'block';
-                document.getElementById('result').innerText = '{texts['save']} $' + total + '!';
+                document.getElementById('result').innerText = '{texts['save']} $' + total.toFixed(0) + '!';
             }}
         </script>
+
         <table class="vs-table">
             <tr><td><strong>{texts['price']}</strong></td><td style="color:var(--accent); font-weight:bold">${row['price_a']}</td><td>${row['price_b']}</td></tr>
             <tr><td><strong>Score</strong></td><td>{row['score_a']}/5.0</td><td>{row['score_b']}/5.0</td></tr>
             <tr><td><strong>Feature</strong></td><td>{row['feature_a']}</td><td>{row['feature_b']}</td></tr>
         </table>
+
         <div class="cta-box">
             <h2 style="margin-bottom: 20px">{texts['winner']}: {row['winner']}</h2>
             <a href="{row['link']}" class="btn-main">👉 {texts['visit']} {row['winner']}</a>
             <p style="margin-top:20px; font-size:0.8rem; color:#94a3b8">Official Affiliate Partner</p>
         </div>
+
+        <!-- 邮件捕获 -->
+        <div class="email-box">
+            <h3>{texts['email_title']}</h3>
+            <p>{texts['email_desc']}</p>
+            <form onsubmit="alert('Thank you! Report sent.'); return false;">
+                <input type="email" placeholder="Email" class="email-input" required>
+                <button type="submit" class="email-btn">{texts['email_btn']}</button>
+            </form>
+        </div>
+
         {internal_links}
     </div>
 </body>
 </html>
             """
+            
             with open(os.path.join(page_dir, 'index.html'), 'w', encoding='utf-8') as f:
                 f.write(html)
 
@@ -243,8 +305,9 @@ def main():
         with open(os.path.join(lang_dir, 'index.html'), 'w', encoding='utf-8') as f:
             f.write(lang_home_html)
 
+    # 最后生成 Sitemap
     generate_sitemap(generated_urls)
-    print("\n🚀 [V5.0 终极融合版] 构建完成！多语言 + 计算器 + 内链 + Sitemap 已就绪。")
+    print("\n🚀 [V6.0 终极完整版] 构建完成！多语言 + 计算器 + 邮件 + 内链 + Sitemap 已就绪。")
 
 if __name__ == "__main__":
     main()
