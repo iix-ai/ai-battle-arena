@@ -5,10 +5,13 @@ import datetime
 import random
 
 # ==========================================
-# 1. 读取通用配置
+# 1. 帝国级配置 (Configuration)
 # ==========================================
-# 即使有 config.json，为了保证代码独立运行不报错，
-# 我在这里内置了默认配置，双重保险。
+CSV_FILE = 'tools.csv'
+OUTPUT_DIR = 'dist'
+BASE_URL = 'https://compare.ii-x.com'
+SITE_NAME = 'AI Tool Diff Engine'
+
 DEFAULT_CONFIG = {
     "site_name": "AI Tool Diff Engine",
     "base_url": "https://compare.ii-x.com",
@@ -21,66 +24,54 @@ try:
 except:
     CONFIG = DEFAULT_CONFIG
 
-CSV_FILE = 'tools.csv'
-OUTPUT_DIR = 'dist'
-
-# 完整 5 国语言矩阵 (V7.1回归 + V9.0新字段)
-TRANS = {
+# 多语言矩阵
+LANGUAGES = {
     'en': {
-        'title': 'VS', 'price': 'Monthly Cost', 'score': 'Rating', 
-        'pros': 'Pros', 'cons': 'Cons', 
-        'budget_pick': '🏆 Best Value', 'power_pick': '🚀 Top Performance',
-        'verdict_value': 'Great for startups.', 'verdict_power': 'Best for enterprises.',
-        'save': 'Yearly Savings', 'visit': 'Get Deal',
-        'calc_title': '💰 ROI Calculator', 'input_label': 'Team Size:', 'calc_btn': 'Calculate',
-        'email_title': 'Get Full Report', 'email_desc': 'Download PDF comparison.', 'email_btn': 'Send',
-        'related': '🔥 People Also Compare'
+        'flag': '🇺🇸', 'title': 'VS', 'price': 'Monthly Cost', 'winner': 'Winner', 
+        'save': 'Yearly Savings', 'visit': 'Get Deal', 
+        'calc_title': '💰 ROI Calculator', 'input_label': 'Team Size:', 'calc_btn': 'Calculate Savings',
+        'email_title': 'Download Full 2026 AI Report', 'email_desc': 'Get the PDF with 50+ tool comparisons.', 'email_btn': 'Send to me',
+        'related': '🔥 People Also Compare',
+        'badge_value': '🏆 Best Value', 'badge_power': '🚀 Top Performance',
+        'verdict_intro': 'Our Verdict:', 'verdict_value': 'Great for startups & freelancers.', 'verdict_power': 'Best for large enterprises.'
     },
     'es': {
-        'title': 'VS', 'price': 'Costo Mensual', 'score': 'Puntuación',
-        'pros': 'Pros', 'cons': 'Contras',
-        'budget_pick': '🏆 Mejor Valor', 'power_pick': '🚀 Máxima Potencia',
-        'verdict_value': 'Ideal para startups.', 'verdict_power': 'Para grandes empresas.',
-        'save': 'Ahorro Anual', 'visit': 'Ver Oferta',
-        'calc_title': '💰 Calculadora ROI', 'input_label': 'Equipo:', 'calc_btn': 'Calcular',
-        'email_title': 'Descargar Reporte', 'email_desc': 'PDF comparativo.', 'email_btn': 'Enviar',
-        'related': '🔥 Comparaciones'
+        'flag': '🇪🇸', 'title': 'VS', 'price': 'Costo Mensual', 'winner': 'Ganador', 
+        'save': 'Ahorro Anual', 'visit': 'Ver Oferta', 
+        'calc_title': '💰 Calculadora ROI', 'input_label': 'Equipo:', 'calc_btn': 'Calcular', 
+        'email_title': 'Descargar Reporte PDF', 'email_desc': 'Comparativa de 50 herramientas.', 'email_btn': 'Enviar',
+        'related': '🔥 Comparaciones Relacionadas',
+        'badge_value': '🏆 Mejor Valor', 'badge_power': '🚀 Máxima Potencia',
+        'verdict_intro': 'Veredicto:', 'verdict_value': 'Ideal para startups.', 'verdict_power': 'Para grandes empresas.'
     },
     'de': {
-        'title': 'VS', 'price': 'Preis', 'score': 'Bewertung',
-        'pros': 'Vorteile', 'cons': 'Nachteile',
-        'budget_pick': '🏆 Bester Wert', 'power_pick': '🚀 Top Leistung',
-        'verdict_value': 'Ideal für Startups.', 'verdict_power': 'Für Unternehmen.',
-        'save': 'Sparen', 'visit': 'Webseite',
-        'calc_title': 'ROI-Rechner', 'input_label': 'Team:', 'calc_btn': 'Berechnen',
-        'email_title': 'Bericht laden', 'email_desc': 'PDF Vergleich.', 'email_btn': 'Senden',
-        'related': '🔥 Ähnliche'
+        'flag': '🇩🇪', 'title': 'VS', 'price': 'Preis', 'winner': 'Gewinner', 
+        'save': 'Sparen', 'visit': 'Webseite', 
+        'calc_title': 'ROI-Rechner', 'input_label': 'Teamgröße:', 'calc_btn': 'Berechnen', 
+        'email_title': 'Bericht herunterladen', 'email_desc': 'PDF mit 50+ Tools.', 'email_btn': 'Senden',
+        'related': '🔥 Ähnliche Vergleiche',
+        'badge_value': '🏆 Bester Wert', 'badge_power': '🚀 Top Leistung',
+        'verdict_intro': 'Urteil:', 'verdict_value': 'Ideal für Startups.', 'verdict_power': 'Für große Unternehmen.'
     },
     'fr': {
-        'title': 'VS', 'price': 'Prix', 'score': 'Note',
-        'pros': 'Avantages', 'cons': 'Inconvénients',
-        'budget_pick': '🏆 Meilleure Valeur', 'power_pick': '🚀 Haute Performance',
-        'verdict_value': 'Idéal pour startups.', 'verdict_power': 'Pour entreprises.',
-        'save': 'Économisez', 'visit': 'Visiter',
-        'calc_title': 'Calculateur ROI', 'input_label': 'Équipe:', 'calc_btn': 'Calculer',
-        'email_title': 'Télécharger PDF', 'email_desc': 'Rapport complet.', 'email_btn': 'Envoyer',
-        'related': '🔥 Similaires'
+        'flag': '🇫🇷', 'title': 'VS', 'price': 'Prix', 'winner': 'Gagnant', 
+        'save': 'Économisez', 'visit': 'Visiter', 
+        'calc_title': 'Calculateur ROI', 'input_label': 'Équipe :', 'calc_btn': 'Calculer', 
+        'email_title': 'Télécharger le rapport', 'email_desc': 'PDF avec 50+ outils.', 'email_btn': 'Envoyer',
+        'related': '🔥 Comparaisons Similaires',
+        'badge_value': '🏆 Meilleure Valeur', 'badge_power': '🚀 Haute Performance',
+        'verdict_intro': 'Verdict:', 'verdict_value': 'Idéal pour les startups.', 'verdict_power': 'Pour les grandes entreprises.'
     },
     'pt': {
-        'title': 'VS', 'price': 'Preço', 'score': 'Avaliação',
-        'pros': 'Prós', 'cons': 'Contras',
-        'budget_pick': '🏆 Melhor Valor', 'power_pick': '🚀 Desempenho',
-        'verdict_value': 'Ideal para startups.', 'verdict_power': 'Para empresas.',
-        'save': 'Economize', 'visit': 'Visitar',
-        'calc_title': 'Calculadora ROI', 'input_label': 'Equipe:', 'calc_btn': 'Calcular',
-        'email_title': 'Baixar Relatório', 'email_desc': 'PDF completo.', 'email_btn': 'Enviar',
-        'related': '🔥 Relacionados'
+        'flag': '🇧🇷', 'title': 'VS', 'price': 'Preço', 'winner': 'Vencedor', 
+        'save': 'Economize', 'visit': 'Visitar', 
+        'calc_title': 'Calculadora ROI', 'input_label': 'Equipe:', 'calc_btn': 'Calcular', 
+        'email_title': 'Baixar Relatório', 'email_desc': 'PDF com 50+ ferramentas.', 'email_btn': 'Enviar',
+        'related': '🔥 Também Comparado',
+        'badge_value': '🏆 Melhor Valor', 'badge_power': '🚀 Desempenho Máximo',
+        'verdict_intro': 'Veredito:', 'verdict_value': 'Ideal para startups.', 'verdict_power': 'Para grandes empresas.'
     }
 }
-
-# ==========================================
-# 3. 核心功能模块
-# ==========================================
 
 def clean_price(price_str):
     try:
@@ -89,12 +80,11 @@ def clean_price(price_str):
         return 0.0
 
 def create_svg_chart(name_a, price_a, name_b, price_b):
-    """SVG 绘图 (V9.0标准)"""
     pa, pb = clean_price(price_a), clean_price(price_b)
     if pa == 0 and pb == 0: return ""
     max_h = max(pa, pb) * 1.2
-    h_a = float((pa/max_h)*200)
-    h_b = float((pb/max_h)*200)
+    h_a = float((pa / max_h) * 200)
+    h_b = float((pb / max_h) * 200)
     c_a = "#22c55e" if pa < pb else "#ef4444"
     c_b = "#22c55e" if pb < pa else "#ef4444"
     diff = abs(pa - pb)
@@ -110,19 +100,17 @@ def create_svg_chart(name_a, price_a, name_b, price_b):
         <text x="300" y="270" text-anchor="middle" font-family="sans-serif" fill="#6b7280" font-size="14">{name_b}</text>
     </svg>'''
 
-def create_schema(row, lang):
-    """Schema 结构化数据"""
+def create_schema(row, lang, computed_winner):
     return json.dumps({
         "@context": "https://schema.org",
         "@type": "Product",
         "name": f"{row['tool_a']} vs {row['tool_b']}",
-        "description": f"Comparison: {row['tool_a']} vs {row['tool_b']}. Updated 2026.",
-        "brand": {"@type": "Brand", "name": CONFIG['site_name']},
+        "description": f"Comparison: {row['tool_a']} vs {row['tool_b']}. Winner: {computed_winner}.",
+        "brand": {"@type": "Brand", "name": SITE_NAME},
         "offers": {"@type": "Offer", "price": str(clean_price(row['price_a'])), "priceCurrency": "USD"}
     })
 
 def generate_internal_links(all_rows, current_slug, prefix, texts):
-    """内链生成"""
     others = [r for r in all_rows if r['slug'] != current_slug]
     if not others: return ""
     picks = random.sample(others, min(6, len(others)))
@@ -133,34 +121,36 @@ def generate_internal_links(all_rows, current_slug, prefix, texts):
     return links_html
 
 def generate_sitemap_and_robots(urls):
-    """Sitemap & Robots"""
     sitemap = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
     for url in urls:
         sitemap += f'  <url><loc>{url}</loc><lastmod>{datetime.date.today()}</lastmod><changefreq>daily</changefreq></url>\n'
     sitemap += '</urlset>'
     with open(os.path.join(OUTPUT_DIR, 'sitemap.xml'), 'w', encoding='utf-8') as f:
         f.write(sitemap)
-    robots = f"User-agent: *\nAllow: /\nSitemap: {CONFIG['base_url']}/sitemap.xml"
+    robots = f"User-agent: *\nAllow: /\nSitemap: {BASE_URL}/sitemap.xml"
     with open(os.path.join(OUTPUT_DIR, 'robots.txt'), 'w', encoding='utf-8') as f:
         f.write(robots)
     print("✅ [SEO] Sitemap & Robots Generated")
 
 def determine_verdict(row, texts):
-    """智能裁决逻辑 (V9.0)"""
     pa = clean_price(row['price_a'])
     pb = clean_price(row['price_b'])
     price_diff = abs(pa - pb)
     
     if pa < pb:
-        badge = texts['budget_pick']
+        badge = texts['badge_value']
         reason = f"{texts['save']} <strong>${price_diff * 12}</strong>/year. {texts['verdict_value']}"
         winner_class = "winner-value"
+        # 顺便算出赢家名字
+        computed_winner = row['tool_a']
     else:
-        badge = texts['power_pick']
+        badge = texts['badge_power']
         reason = texts['verdict_power']
         winner_class = "winner-power"
+        # 如果B便宜，B赢；如果一样贵，默认A赢（或者您可以改逻辑）
+        computed_winner = row['tool_b'] if pb < pa else row['tool_a']
     
-    return badge, reason, winner_class, price_diff * 12
+    return badge, reason, winner_class, price_diff * 12, computed_winner
 
 def main():
     if not os.path.exists(OUTPUT_DIR): os.makedirs(OUTPUT_DIR)
@@ -170,8 +160,7 @@ def main():
         print("❌ CSV Not Found!")
         return
 
-    generated_urls = [CONFIG['base_url']]
-    # 恢复 5 国语言
+    generated_urls = [BASE_URL]
     target_langs = ['en', 'es', 'de', 'fr', 'pt']
 
     for lang in target_langs:
@@ -183,27 +172,28 @@ def main():
         index_html = f"<h1>{CONFIG['site_name']} ({lang.upper()})</h1><div style='display:grid;gap:10px'>"
 
         for row in all_rows:
-            # 逻辑计算
-            badge, reason, win_class, yearly_save = determine_verdict(row, t)
+            # 核心修复：自动计算赢家，不依赖 CSV 里的 'winner' 列
+            badge, reason, win_class, yearly_save, computed_winner = determine_verdict(row, t)
+            
             svg_chart = create_svg_chart(row['tool_a'], row['price_a'], row['tool_b'], row['price_b'])
-            schema_json = create_schema(row, lang)
+            # 传入 computed_winner 而不是 row['winner']
+            schema_json = create_schema(row, lang, computed_winner)
+            
             prefix = "" if lang == 'en' else f"/{lang}"
             internal_links = generate_internal_links(all_rows, row['slug'], prefix, t)
             
-            # Pros/Cons 列表 (V9.0)
-            pros_list = row.get('pros_b', 'Good Value;Easy to Use;Fast').split(';')
-            cons_list = row.get('cons_b', 'Limited features;Basic API;Newer').split(';')
-
-            # URL
             slug = row['slug']
             page_dir = os.path.join(lang_dir, slug)
             if not os.path.exists(page_dir): os.makedirs(page_dir)
-            full_url = f"{CONFIG['base_url']}{prefix}/{slug}/"
+            full_url = f"{BASE_URL}{prefix}/{slug}/"
             generated_urls.append(full_url)
             
             index_html += f"<a href='{slug}/' style='display:block;padding:10px;background:white;margin-bottom:10px;text-decoration:none;color:#333;border:1px solid #eee'>{row['tool_a']} vs {row['tool_b']}</a>"
 
-            # === 终极 HTML (全功能) ===
+            # 获取 Pros/Cons
+            pros_list = row.get('pros_b', 'Good Value;Easy to Use;Fast').split(';')
+            cons_list = row.get('cons_b', 'Limited features;Basic API;Newer').split(';')
+
             html = f"""
 <!DOCTYPE html>
 <html lang="{lang}">
@@ -211,7 +201,7 @@ def main():
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{row['tool_a']} vs {row['tool_b']} | {CONFIG['site_name']}</title>
-    <meta name="description" content="{t['title']}: {row['tool_a']} vs {row['tool_b']}. {t['winner']}: {row['winner']}.">
+    <meta name="description" content="{t['title']}: {row['tool_a']} vs {row['tool_b']}. {t['winner']}: {computed_winner}.">
     <script type="application/ld+json">{schema_json}</script>
     <style>
         body {{ font-family: system-ui, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; color: #1f2937; background: #f9fafb; }}
@@ -222,123 +212,108 @@ def main():
         .v-budget {{ background: #ecfdf5; color: #047857; border: 1px solid #10b981; }}
         .v-power {{ background: #eff6ff; color: #1d4ed8; border: 1px solid #3b82f6; }}
         .chart-box {{ background: white; padding: 20px; border-radius: 12px; margin: 30px 0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }}
-        
-        /* V9.0 优缺点 */
         .pros-cons {{ display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 30px 0; }}
         .pc-box {{ background: white; padding: 20px; border-radius: 8px; }}
         .pc-title {{ font-weight: bold; margin-bottom: 10px; display: block; }}
         .check {{ color: green; }} .cross {{ color: red; }}
-        
-        /* V7.1 计算器 */
         .calculator {{ background: #1e293b; color: white; padding: 30px; border-radius: 16px; margin: 40px 0; }}
         .calc-flex {{ display: flex; gap: 20px; align-items: flex-end; }}
         .calc-input {{ flex: 1; }}
         .calc-input label {{ display: block; font-size: 0.9rem; margin-bottom: 8px; opacity: 0.8; }}
         .calc-input input {{ width: 100%; padding: 12px; border-radius: 8px; border: none; }}
         .calc-res {{ font-size: 1.5rem; font-weight: 800; color: #4ade80; margin-top: 20px; display: none; }}
-        
-        /* V7.1 邮件捕获 */
+        .vs-table {{ width: 100%; background: white; border-radius: 12px; border-collapse: collapse; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }}
+        .vs-table td {{ padding: 20px; border-bottom: 1px solid #f1f5f9; }}
+        .cta-box {{ text-align: center; margin-top: 50px; }}
+        .btn-main {{ background: var(--accent); color: white; padding: 18px 40px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 1.2rem; display: inline-block; transition: 0.2s; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.2); }}
         .email-box {{ background: #fff; border: 2px dashed #cbd5e1; padding: 30px; border-radius: 12px; margin-top: 50px; text-align: center; }}
         .email-input {{ padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; width: 60%; margin-right: 10px; }}
         .email-btn {{ padding: 10px 20px; background: #0f172a; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; }}
-
-        .btn {{ display: block; background: #000; color: white; text-align: center; padding: 15px; border-radius: 8px; text-decoration: none; font-weight: bold; margin-top: 20px; }}
-        table {{ width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; }}
-        td {{ padding: 15px; border-bottom: 1px solid #eee; }}
         .internal-links {{ margin-top: 60px; padding-top: 30px; border-top: 1px solid #e2e8f0; }}
         .links-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }}
         .links-grid a {{ background: #f1f5f9; padding: 10px; border-radius: 6px; text-decoration: none; color: #475569; font-size: 0.85rem; text-align: center; }}
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>{row['tool_a']} <span style="color:#9ca3af">vs</span> {row['tool_b']}</h1>
-        <p>Updated: {datetime.date.today()}</p>
-    </div>
-
-    <!-- V9.0 场景化推荐 -->
-    <div class="verdict-grid">
-        <div class="verdict-card v-budget">
-            <div>{t['budget_pick']}</div>
-            <div style="font-size:1.5rem">{budget_winner}</div>
+    <nav class="nav">
+        <a href="/" class="logo">⚡ {SITE_NAME}</a>
+        <div><span style="margin-right: 15px">{texts['flag']}</span><a href="#" class="btn-login">Log In</a></div>
+    </nav>
+    <div class="container">
+        <div class="header">
+            <span class="badge">Live Data 2026</span>
+            <h1>{row['tool_a']} <span style="color:#cbd5e1">vs</span> {row['tool_b']}</h1>
+            <p>Data-driven analysis for decision makers.</p>
         </div>
-        <div class="verdict-card v-power">
-            <div>{t['power_pick']}</div>
-            <div style="font-size:1.5rem">{power_winner}</div>
+        
+        <div class="chart-box">{svg_chart}</div>
+        
+        <div class="verdict-box {win_class}">
+            <span class="verdict-title">{badge}</span>
+            <p>{texts['verdict_intro']} <strong>{reason}</strong></p>
         </div>
-    </div>
 
-    <div class="chart-box">{svg_chart}</div>
-
-    <!-- V7.1 计算器 -->
-    <div class="calculator">
-        <h3>🧮 {t['calc_title']}</h3>
-        <div class="calc-flex">
-            <div class="calc-input">
-                <label>{t['input_label']}</label>
-                <input type="number" id="months" value="12" min="1">
+        <div class="calculator">
+            <h3>🧮 {texts['calc_title']}</h3>
+            <div class="calc-flex">
+                <div class="calc-input">
+                    <label>{texts['input_label']}</label>
+                    <input type="number" id="months" value="12" min="1">
+                </div>
+                <button onclick="calculate()" style="background:#4ade80; color:#064e3b; border:none; padding:12px 24px; border-radius:8px; font-weight:bold; cursor:pointer">{texts['calc_btn']}</button>
             </div>
-            <button onclick="calculate()" style="background:#4ade80; color:#064e3b; border:none; padding:12px 24px; border-radius:8px; font-weight:bold; cursor:pointer">{t['calc_btn']}</button>
+            <div id="result" class="calc-res"></div>
         </div>
-        <div id="result" class="calc-res"></div>
-    </div>
-    <script>
-        function calculate() {{
-            const months = document.getElementById('months').value;
-            const yearlySave = {yearly_save};
-            const total = (yearlySave / 12) * months;
-            document.getElementById('result').style.display = 'block';
-            document.getElementById('result').innerText = '{t['save']} $' + total.toFixed(0) + '!';
-        }}
-    </script>
+        <script>
+            function calculate() {{
+                const months = document.getElementById('months').value;
+                const yearlySave = {yearly_save};
+                const total = (yearlySave / 12) * months;
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('result').innerText = '{texts['save']} $' + total.toFixed(0) + '!';
+            }}
+        </script>
 
-    <table>
-        <tr>
-            <td><strong>{t['price']}</strong></td>
-            <td><strong>${row['price_a']}</strong></td>
-            <td><strong>${row['price_b']}</strong></td>
-        </tr>
-        <tr>
-            <td><strong>{t['score']}</strong></td>
-            <td>{row.get('score_a', 'N/A')}</td>
-            <td>{row.get('score_b', 'N/A')}</td>
-        </tr>
-    </table>
+        <table class="vs-table">
+            <tr><td><strong>{texts['price']}</strong></td><td style="color:var(--accent); font-weight:bold">${row['price_a']}</td><td>${row['price_b']}</td></tr>
+            <tr><td><strong>Score</strong></td><td>{row['score_a']}/5.0</td><td>{row['score_b']}/5.0</td></tr>
+            <tr><td><strong>Feature</strong></td><td>{row['feature_a']}</td><td>{row['feature_b']}</td></tr>
+        </table>
 
-    <!-- V9.0 优缺点 -->
-    <div class="pros-cons">
-        <div class="pc-box">
-            <span class="pc-title">{row['tool_b']} {t['pros']}</span>
-            {''.join([f'<div><span class="check">✔</span> {x}</div>' for x in pros_list])}
+        <div class="pros-cons">
+            <div class="pc-box">
+                <span class="pc-title">{row['tool_b']} {texts['pros']}</span>
+                {''.join([f'<div><span class="check">✔</span> {x}</div>' for x in pros_list])}
+            </div>
+            <div class="pc-box">
+                <span class="pc-title">{row['tool_b']} {texts['cons']}</span>
+                {''.join([f'<div><span class="cross">✘</span> {x}</div>' for x in cons_list])}
+            </div>
         </div>
-        <div class="pc-box">
-            <span class="pc-title">{row['tool_b']} {t['cons']}</span>
-            {''.join([f'<div><span class="cross">✘</span> {x}</div>' for x in cons_list])}
+
+        <div class="cta-box">
+            <h2 style="margin-bottom: 20px">{texts['winner']}: {computed_winner}</h2>
+            <a href="{row['link']}" class="btn-main">👉 {texts['visit']} {computed_winner}</a>
+            <p style="margin-top:20px; font-size:0.8rem; color:#94a3b8">Official Affiliate Partner</p>
         </div>
-    </div>
 
-    <a href="{row['link']}" class="btn">👉 {t['visit']} {row['winner']}</a>
-    
-    <!-- V7.1 邮件捕获 -->
-    <div class="email-box">
-        <h3>{t['email_title']}</h3>
-        <p>{t['email_desc']}</p>
-        <form onsubmit="alert('Thank you! Report sent.'); return false;">
-            <input type="email" placeholder="Email" class="email-input" required>
-            <button type="submit" class="email-btn">{t['email_btn']}</button>
-        </form>
-    </div>
-    
-    <p style="text-align:center; font-size:0.8rem; margin-top:20px; color:#999">{CONFIG['affiliate_disclosure']}</p>
+        <div class="email-box">
+            <h3>{texts['email_title']}</h3>
+            <p>{texts['email_desc']}</p>
+            <form onsubmit="alert('Thank you! Report sent.'); return false;">
+                <input type="email" placeholder="Email" class="email-input" required>
+                <button type="submit" class="email-btn">{texts['email_btn']}</button>
+            </form>
+        </div>
 
-    {internal_links}
+        {internal_links}
+    </div>
 </body>
 </html>
             """
             with open(os.path.join(page_dir, 'index.html'), 'w', encoding='utf-8') as f:
                 f.write(html)
             
-            # 生成索引
             index_html += f"<a href='{slug}/' style='display:block;padding:10px;background:white;margin-bottom:10px;text-decoration:none;color:#333;border:1px solid #eee'>{row['tool_a']} vs {row['tool_b']}</a>"
 
         index_html += "</div>"
@@ -346,7 +321,7 @@ def main():
             f.write(index_html)
 
     generate_sitemap_and_robots(generated_urls)
-    print("\n🚀 [V9.1 终极完全体] 所有功能核对完毕。")
+    print("\n🚀 [V9.2] 逻辑闭环。Winner自动计算，不再依赖CSV。")
 
 if __name__ == "__main__":
     main()
