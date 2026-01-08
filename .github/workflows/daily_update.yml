@@ -38,5 +38,9 @@ jobs:
           git config --global user.name "Tiandao Bot"
           git config --global user.email "bot@ii-x.com"
           git add tools.csv dist/
+          # 先提交到本地
           git commit -m "Auto-update: $(date +'%Y-%m-%d')" || echo "No changes to commit"
-          git push
+          # 核心修复：推送前先拉取最新代码，并自动合并 (Rebase)
+          git pull --rebase origin main
+          # 再次推送
+          git push origin main
