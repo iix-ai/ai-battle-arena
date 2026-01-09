@@ -70,6 +70,21 @@ def generate_pages(csv_file, config):
     # 生成首页
     with open(f"{output_dir}/index.html", "w", encoding="utf-8") as f:
         f.write(tpl_index.render(config=config, pages=pages))
+
+        # --- 新增：生成法律页面 ---
+    try:
+        tpl_privacy = env.get_template('privacy.html')
+        tpl_terms = env.get_template('terms.html')
+        
+        with open(f"{output_dir}/privacy.html", "w", encoding="utf-8") as f:
+            f.write(tpl_privacy.render(config=config))
+            
+        with open(f"{output_dir}/terms.html", "w", encoding="utf-8") as f:
+            f.write(tpl_terms.render(config=config))
+        print("✅ Legal pages generated.")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not generate legal pages: {e}")
+
     
     # 生成 CNAME (这是 GitHub Pages 的关键)
     if os.path.exists("CNAME"):
