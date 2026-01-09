@@ -7,43 +7,57 @@ import time
 def enrich_data(raw_file, enriched_file):
     print("🧠 [Enricher] Checking data integrity...")
     
-    # 读取原始数据
+    # 1. 检查原始数据是否存在
     if not os.path.exists(raw_file):
         print("❌ Error: Raw data file not found.")
         return
 
-    df_raw = pd.read_csv(raw_file)
-    
-    # 读取已有的丰富数据（缓存），如果不存在则创建一个空的
-    if os.path.exists(enriched_file):
-        df_enriched = pd.read_csv(enriched_file)
+    # 读取原始数据 (Raw)
+    try:
+        df_raw = pd.read_csv(raw_file)
+    except Exception as e:
+        print(f"❌ Error reading raw file: {e}")
+        return
+
+    # 2. 智能读取缓存 (修复 EmptyDataError)
+    # 只有当文件存在 且 大小大于0 时，才尝试读取
+    if os.path.exists(enriched_file) and os.path.getsize(enriched_file) > 0:
+        try:
+            df_enriched = pd.read_csv(enriched_file)
+            print("   ✅ Loaded existing enriched data cache.")
+        except pd.errors.EmptyDataError:
+            print("   ⚠️ Enriched file is empty. Creating new one.")
+            df_enriched = pd.DataFrame(columns=list(df_raw.columns) + ['Pros', 'Cons', 'Verdict'])
     else:
+        print("   🆕 No cache found. Creating new enriched dataframe.")
         df_enriched = pd.DataFrame(columns=list(df_raw.columns) + ['Pros', 'Cons', 'Verdict'])
 
-    # 找出哪些是新工具 (在 Raw 里有，在 Enriched 里没有的)
-    # 这里做简单的全量覆盖逻辑演示，但在生产环境建议做增量更新
-    # 为了简化 GitHub Action 流程，这里我们假设每次 raw 变动都需要重新检查
-    
-    # ⚠️ 关键：从环境变量获取 Key，绝不要写死！
+    # 3. 检查 API Key
     api_key = os.environ.get("DEEPSEEK_API_KEY")
     if not api_key:
-        print("⚠️ No API Key found in environment. Skipping AI enrichment.")
-        # 如果没有 Key (比如本地测试没配)，就直接把 raw 复制过去，避免报错
-        if not os.path.exists(enriched_file):
-             df_raw.to_csv(enriched_file, index=False)
+        print("⚠️ No DEEPSEEK_API_KEY found in environment secrets.")
+        print("   -> Skipping AI enrichment to prevent crash.")
+        # 如果没有Key，直接把原始数据保存过去，保证后续步骤有文件可用
+        if not os.path.exists(enriched_file) or os.path.getsize(enriched_file) == 0:
+            df_raw.to_csv(enriched_file, index=False)
         return
 
     client = OpenAI(api_key=api_key, base_url="https://api.deepseek.com")
 
-    # 遍历每一行
+    # 4. 开始处理数据
+    data_changed = False # 标记是否有新数据写入
+
     for index, row in df_raw.iterrows():
-        tool_name = row['Tool_Name']
+        tool_name = str(row['Tool_Name'])
         
-        # 检查是否已经处理过 (避免重复烧钱)
-        if tool_name in df_enriched['Tool_Name'].values:
-            existing_row = df_enriched[df_enriched['Tool_Name'] == tool_name].iloc[0]
-            if pd.notna(existing_row.get('Verdict')):
-                print(f"   ⏭️ Skipping {tool_name} (Already enriched)")
+        # 过滤掉垃圾数据 (比如 Excel 截图里的 ![Awesome]...)
+        if "!" in tool_name or "[" in tool_name or len(tool_name) < 2:
+            continue
+
+        # 检查缓存：如果这个工具已经处理过且 Verdict 不为空，跳过
+        if 'Tool_Name' in df_enriched.columns and tool_name in df_enriched['Tool_Name'].values:
+            existing_rows = df_enriched[df_enriched['Tool_Name'] == tool_name]
+            if not existing_rows.empty and pd.notna(existing_rows.iloc[0].get('Verdict')):
                 continue
 
         print(f"   🤖 AI Processing: {tool_name}...")
@@ -53,7 +67,7 @@ def enrich_data(raw_file, enriched_file):
         "pros": ["pro1", "pro2", "pro3"],
         "cons": ["con1", "con2", "con3"],
         "verdict": "Best for X"
-        JSON ONLY.
+        JSON ONLY. No markdown.
         """
         
         try:
@@ -62,21 +76,36 @@ def enrich_data(raw_file, enriched_file):
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1
             )
-            data = json.loads(response.choices[0].message.content.replace("```json", "").replace("```", ""))
+            content = response.choices[0].message.content.strip()
+            # 清理可能存在的 markdown 标记
+            if content.startswith("```"):
+                content = content.split("\n", 1)[1].rsplit("\n", 1)[0]
             
-            # 更新/写入数据
-            df_enriched.loc[index, 'Tool_Name'] = tool_name
-            df_enriched.loc[index, 'Price'] = row['Price']
-            df_enriched.loc[index, 'Monthly_Visits'] = row['Monthly_Visits'] # 假设你有这个列
-            df_enriched.loc[index, 'Pros'] = " | ".join(data['pros'])
-            df_enriched.loc[index, 'Cons'] = " | ".join(data['cons'])
-            df_enriched.loc[index, 'Verdict'] = data['verdict']
+            data = json.loads(content)
             
-            # 实时保存
+            # 定位或新增行
+            # 这里简单处理：直接在 df_enriched 里追加或更新
+            # 为了代码简单，我们直接把当前 row 复制并添加 AI 字段
+            new_row = row.copy()
+            new_row['Pros'] = " | ".join(data.get('pros', []))
+            new_row['Cons'] = " | ".join(data.get('cons', []))
+            new_row['Verdict'] = data.get('verdict', '')
+            
+            # 将新行转为 DataFrame 并合并
+            df_enriched = pd.concat([df_enriched, pd.DataFrame([new_row])], ignore_index=True)
+            
+            # 实时保存 (防止超时丢失)
             df_enriched.to_csv(enriched_file, index=False)
-            time.sleep(1) # 避免速率限制
+            data_changed = True
+            time.sleep(0.5)
             
         except Exception as e:
             print(f"   ❌ Failed to enrich {tool_name}: {e}")
 
-    print("✅ Enrichment complete.")
+    # 再次去重保存，确保整洁
+    if data_changed:
+        df_enriched.drop_duplicates(subset=['Tool_Name'], keep='last', inplace=True)
+        df_enriched.to_csv(enriched_file, index=False)
+        print("✅ Enrichment update complete.")
+    else:
+        print("✅ No new data needed enrichment.")
