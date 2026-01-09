@@ -7,7 +7,6 @@ def generate_charts(csv_file, output_dir, config):
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     
-    # 如果没有丰富数据，尝试读取原始数据
     if not os.path.exists(csv_file):
         print("⚠️ No data file found for visualization.")
         return
@@ -16,11 +15,15 @@ def generate_charts(csv_file, output_dir, config):
     plt.style.use('ggplot')
     hero = config['hero_product']
     
-    # 尝试获取 Hero 价格，处理异常
+    # 获取 Hero 价格
     try:
-        hero_price = float(df[df['Tool_Name'] == hero]['Price'].values[0])
+        hero_row = df[df['Tool_Name'] == hero]
+        if not hero_row.empty:
+            hero_price = float(hero_row['Price'].values[0])
+        else:
+            hero_price = 0.0
     except:
-        hero_price = 0
+        hero_price = 0.0
 
     for index, row in df.iterrows():
         comp = row['Tool_Name']
@@ -31,7 +34,15 @@ def generate_charts(csv_file, output_dir, config):
             
             names = [hero, comp]
             prices = [hero_price, comp_price]
-            colors = ['#22c55e' if p <= comp_price else '#ef4444', '#ef4444' if p > comp_price else '#22c55e'] # 简单逻辑：便宜的绿色
+            
+            # 修复点：正确的颜色判断逻辑
+            # 价格低的显示绿色(#22c55e)，价格高的显示红色(#ef4444)
+            colors = []
+            for p in prices:
+                if p == min(prices):
+                    colors.append('#22c55e')
+                else:
+                    colors.append('#ef4444')
 
             fig, ax = plt.subplots(figsize=(6, 4))
             bars = ax.bar(names, prices, color=colors, width=0.5)
@@ -47,4 +58,5 @@ def generate_charts(csv_file, output_dir, config):
             plt.savefig(f"{output_dir}/{slug}.png", dpi=100)
             plt.close()
         except Exception as e:
+            # 打印错误但不中断整个流程
             print(f"   ⚠️ Could not draw chart for {comp}: {e}")

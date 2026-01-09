@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ config.site_name }} - Top Tool Comparisons</title>
+    <meta name="description" content="Compare the best software tools for your business. Unbiased reviews and pricing analysis.">
+    <link rel="stylesheet" href="static/style.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <nav class="bg-white border-b border-gray-200 p-4 mb-8">
+        <div class="max-w-5xl mx-auto font-bold text-xl text-blue-600">{{ config.site_name }}</div>
+    </nav>
+
+    <header class="text-center py-16 px-4">
+        <h1 class="text-4xl md:text-6xl font-extrabold mb-4 text-gray-900">
+            Stop Overpaying for <span class="text-blue-600">SaaS</span>
+        </h1>
+        <p class="text-xl text-gray-500 mb-8">Find the best value alternatives for popular tools.</p>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 pb-20">
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for page in pages %}
+            <a href="{{ page.link }}" class="group block bg-white rounded-xl shadow-sm hover:shadow-md border border-gray-100 transition duration-200 overflow-hidden">
+                <div class="p-6">
+                    <h2 class="font-bold text-lg mb-2 group-hover:text-blue-600 transition">{{ page.title }}</h2>
+                    <div class="text-sm text-gray-400">View Comparison &rarr;</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </main>
+
+    <footer class="text-center py-8 text-gray-400 text-sm border-t border-gray-200 bg-white">
+        &copy; 2026 {{ config.site_name }}. All rights reserved.
+    </footer>
+
+</body>
+</html>
