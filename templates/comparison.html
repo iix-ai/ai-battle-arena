@@ -12,10 +12,13 @@
       "@context": "https://schema.org",
       "@type": "Product",
       "name": "{{ hero.Tool_Name }} vs {{ comp.Tool_Name }}",
-      "brand": { "@type": "Brand", "name": "{{ config.site_name }}" },
+      // ...
       "review": { 
         "@type": "Review", 
-        "reviewRating": { "@type": "Rating", "ratingValue": "4.5", "bestRating": "5" },
+        "reviewRating": { 
+            "@type": "Rating", 
+            "ratingValue": "{{ comp.Rating }}",  "bestRating": "5" 
+        },
         "author": { "@type": "Person", "name": "AI Tech Reviewer" }
       }
     }
