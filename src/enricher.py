@@ -62,11 +62,14 @@ def enrich_data(raw_file, enriched_file):
 
         print(f"   🤖 AI Processing: {tool_name}...")
         
+        # 修改 prompt
         prompt = f"""
         Analyze software "{tool_name}". Return JSON with:
         "pros": ["pro1", "pro2", "pro3"],
         "cons": ["con1", "con2", "con3"],
-        "verdict": "Best for X"
+        "verdict": "Best for X",
+        "rating": "4.x" 
+        (Provide a realistic rating between 4.0 and 4.9 based on user sentiment. e.g. "4.7")
         JSON ONLY. No markdown.
         """
         
@@ -90,6 +93,7 @@ def enrich_data(raw_file, enriched_file):
             new_row['Pros'] = " | ".join(data.get('pros', []))
             new_row['Cons'] = " | ".join(data.get('cons', []))
             new_row['Verdict'] = data.get('verdict', '')
+            new_row['Rating'] = data.get('rating', '4.5') # 新增这一行
             
             # 将新行转为 DataFrame 并合并
             df_enriched = pd.concat([df_enriched, pd.DataFrame([new_row])], ignore_index=True)
