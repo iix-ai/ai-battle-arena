@@ -1,11 +1,20 @@
 {
   "site_name": "SaaS Battle Arena",
   "domain": "https://compare.ii-x.com",
+  
   "hero_product": "Mangools",
-  "hero_affiliate_link": "https://mangools.com#aff",
+  "hero_affiliate_link": "https://mangools.com#a6944b0716aee08b68b6302a9", 
+  
   "currency": "$",
+  "ga_tracking_id": "G-ZTXQMR69L9", 
+  
   "winner_logic": {
     "price_weight": 0.6,
     "feature_weight": 0.4
+  },
+
+  "legal": {
+    "disclosure": "Transparency: We may earn a commission when you buy through our links. This helps keep our analysis free.",
+    "company_name": "II-X AI Group"
   }
 }
