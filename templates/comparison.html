@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ hero.Tool_Name }} vs {{ comp.Tool_Name }}: The Honest Review ({{ date }})</title>
+    <meta name="description" content="Detailed comparison of {{ hero.Tool_Name }} vs {{ comp.Tool_Name }}. See price charts, pros & cons, and find out which one is right for you.">
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": "{{ hero.Tool_Name }} vs {{ comp.Tool_Name }}",
+      "brand": { "@type": "Brand", "name": "{{ config.site_name }}" },
+      "review": { "@type": "Review", "reviewRating": { "@type": "Rating", "ratingValue": "4.8" } }
+    }
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-800">
+
+    <nav class="bg-white border-b border-slate-200 p-4 mb-8">
+        <div class="max-w-4xl mx-auto font-bold text-xl text-blue-600">{{ config.site_name }}</div>
+    </nav>
+
+    <div class="max-w-4xl mx-auto px-4">
+        
+        <h1 class="text-3xl md:text-5xl font-extrabold text-center mb-4">
+            {{ hero.Tool_Name }} <span class="text-slate-400">vs</span> {{ comp.Tool_Name }}
+        </h1>
+        <p class="text-center text-slate-500 mb-12">Updated for {{ date }} • Unbiased Analysis</p>
+
+        <div class="bg-white rounded-xl shadow-lg border border-slate-100 p-8 mb-12 text-center">
+            <div class="inline-block bg-yellow-100 text-yellow-800 font-bold px-4 py-1 rounded-full text-sm mb-4">
+                {{ badge }}
+            </div>
+            <h2 class="text-2xl font-bold mb-2">The Winner: <span class="text-blue-600">{{ winner }}</span></h2>
+            <p class="text-slate-600 mb-6">{{ reason }}</p>
+            
+            <a href="{{ config.hero_affiliate_link }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg shadow-md transition transform hover:-translate-y-1">
+                Try {{ hero.Tool_Name }} for Free &rarr;
+            </a>
+        </div>
+
+        <div class="mb-12">
+            <h3 class="text-xl font-bold mb-4 border-l-4 border-blue-600 pl-4">Price Comparison</h3>
+            <div class="bg-white p-6 rounded-lg shadow-sm border border-slate-200 flex justify-center">
+                <img src="images/{{ slug }}.png" alt="Price chart" class="max-w-full h-auto rounded">
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8 mb-16">
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <h3 class="font-bold text-lg mb-4 text-green-600">Why choose {{ hero.Tool_Name }}?</h3>
+                <ul class="space-y-2">
+                    {% for pro in hero.Pros.split('|') %}
+                    <li class="flex items-start"><span class="mr-2">✅</span> {{ pro }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <h3 class="font-bold text-lg mb-4 text-slate-600">{{ comp.Tool_Name }} Strengths</h3>
+                <ul class="space-y-2">
+                    {% for pro in comp.Pros.split('|') %}
+                    <li class="flex items-start"><span class="mr-2">🔹</span> {{ pro }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+    </div>
+
+    <footer class="text-center py-8 text-slate-400 text-sm">
+        &copy; {{ date }} {{ config.site_name }}. All rights reserved.
+    </footer>
+
+</body>
+</html>

@@ -1,2 +1,4 @@
-requests
+pandas
+matplotlib
+jinja2
 openai
