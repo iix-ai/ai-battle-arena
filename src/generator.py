@@ -4,7 +4,9 @@ import os
 import shutil
 import datetime
 
-# 翻译字典：让界面文字也变成本地语言
+# ===========================
+# 1. 配置与翻译字典
+# ===========================
 TRANSLATIONS = {
     'en': {
         'folder': '',
@@ -16,7 +18,8 @@ TRANSLATIONS = {
         'pros_comp': 'Advantages',
         'rated': 'Rated',
         'footer_rights': 'All rights reserved.',
-        'col_pros': 'Pros', 'col_cons': 'Cons', 'col_verdict': 'Verdict' # 对应CSV列名后缀
+        'col_pros': 'Pros', 'col_cons': 'Cons', 'col_verdict': 'Verdict',
+        'home_btn': 'Read Review', 'privacy': 'Privacy Policy', 'terms': 'Terms of Use'
     },
     'es': {
         'folder': 'es',
@@ -28,7 +31,8 @@ TRANSLATIONS = {
         'pros_comp': 'Ventajas',
         'rated': 'Calificado',
         'footer_rights': 'Todos los derechos reservados.',
-        'col_pros': 'Pros_ES', 'col_cons': 'Cons_ES', 'col_verdict': 'Verdict_ES'
+        'col_pros': 'Pros_ES', 'col_cons': 'Cons_ES', 'col_verdict': 'Verdict_ES',
+        'home_btn': 'Leer Opinión', 'privacy': 'Política de Privacidad', 'terms': 'Términos de Uso'
     },
     'pt': {
         'folder': 'pt',
@@ -40,24 +44,27 @@ TRANSLATIONS = {
         'pros_comp': 'Vantagens',
         'rated': 'Avaliado',
         'footer_rights': 'Todos os direitos reservados.',
-        'col_pros': 'Pros_PT', 'col_cons': 'Cons_PT', 'col_verdict': 'Verdict_PT'
+        'col_pros': 'Pros_PT', 'col_cons': 'Cons_PT', 'col_verdict': 'Verdict_PT',
+        'home_btn': 'Ler Análise', 'privacy': 'Política de Privacidade', 'terms': 'Termos de Uso'
     }
 }
 
+# 用于收集所有链接生成 Sitemap
+ALL_URLS = []
+
 def generate_pages(csv_file, config):
-    print("🏭 [Generator] Building Multi-language Site...")
+    print("🏭 [Generator V9.6] Building Multi-language Site with Sitemap...")
     
     base_output_dir = 'public'
     if os.path.exists(base_output_dir):
         shutil.rmtree(base_output_dir)
     os.makedirs(base_output_dir)
     
-    # 复制静态资源
+    # --- 资源复制 ---
     os.makedirs(f"{base_output_dir}/images", exist_ok=True)
     os.makedirs(f"{base_output_dir}/static", exist_ok=True)
     
     if os.path.exists('static'):
-        # 复制 favicon 等
         for item in os.listdir('static'):
             s = os.path.join('static', item)
             d = os.path.join(f"{base_output_dir}/static", item)
@@ -67,46 +74,56 @@ def generate_pages(csv_file, config):
         for img in os.listdir('data/images'):
             shutil.copy(f"data/images/{img}", f"{base_output_dir}/images/{img}")
 
-    if not os.path.exists(csv_file): return
+    if not os.path.exists(csv_file): 
+        print("❌ CSV Not Found!")
+        return
 
     df = pd.read_csv(csv_file).fillna("")
     env = Environment(loader=FileSystemLoader('templates'))
     tpl_compare = env.get_template('comparison.html')
     
+    # 如果有 index.html 模板就用，没有就忽略（这里假设你有）
+    try:
+        tpl_index = env.get_template('index.html')
+    except:
+        tpl_index = None
+
     hero = config['hero_product']
     try:
         hero_data = df[df['Tool_Name'] == hero].iloc[0]
     except:
+        print("❌ Hero product not found in CSV")
         return
 
     # --- 核心循环：遍历三种语言 ---
     for lang, trans in TRANSLATIONS.items():
         print(f"   🌍 Generating {lang.upper()} pages...")
         
-        # 确定输出子目录
+        # 确定路径
         if trans['folder']:
             current_output_dir = f"{base_output_dir}/{trans['folder']}"
-            os.makedirs(current_output_dir, exist_ok=True)
-            # 这里的 images 路径需要处理，为了简单，我们在 HTML 里用绝对路径 config.domain
+            url_prefix = f"{config['domain']}/{trans['folder']}"
         else:
             current_output_dir = base_output_dir
+            url_prefix = f"{config['domain']}"
+            
+        os.makedirs(current_output_dir, exist_ok=True)
 
-        pages_meta = []
-        
+        # 收集当前语言的所有页面，用于生成该语言的首页
+        lang_pages_list = []
+
+        # 1. 生成对比页
         for index, row in df.iterrows():
             comp = row['Tool_Name']
             if comp == hero: continue
             
             slug = f"{hero.lower()}-vs-{comp.lower().replace(' ', '-')}"
+            filename = f"{slug}.html"
             
-            # 获取对应语言的数据
-            # 如果是 ES/PT，读取 Pros_ES/Pros_PT；如果是 EN，读取 Pros
-            # 注意：CSV列名可能为空，要做容错
+            # 数据逻辑
             hero_pros = str(hero_data.get(trans['col_pros'], hero_data['Pros']))
             comp_pros = str(row.get(trans['col_pros'], row['Pros']))
             verdict_text = str(row.get(trans['col_verdict'], row['Verdict']))
-
-            # 价格逻辑
             price_diff = float(row['Price']) - float(hero_data['Price'])
             reason = verdict_text if verdict_text else (f"Save ${int(price_diff)}/mo" if price_diff > 0 else "Great alternative")
 
@@ -118,27 +135,77 @@ def generate_pages(csv_file, config):
                 reason=reason,
                 hero_pros=hero_pros,
                 comp_pros=comp_pros,
-                trans=trans, # 传入翻译字典
+                trans=trans,
                 lang_code=lang
             )
             
-            with open(f"{current_output_dir}/{slug}.html", "w", encoding="utf-8") as f:
+            with open(f"{current_output_dir}/{filename}", "w", encoding="utf-8") as f:
                 f.write(html)
+            
+            # 记录 URL 到 Sitemap 和 首页列表
+            full_url = f"{url_prefix}/{filename}"
+            ALL_URLS.append(full_url)
+            lang_pages_list.append({'title': f"{hero} vs {comp}", 'link': filename})
 
-    # 复制 CNAME (只在根目录)
+        # 2. 生成当前语言的 Index 首页
+        if tpl_index:
+            index_html = tpl_index.render(config=config, pages=lang_pages_list, trans=trans, lang_code=lang)
+            with open(f"{current_output_dir}/index.html", "w", encoding="utf-8") as f:
+                f.write(index_html)
+            ALL_URLS.append(f"{url_prefix}/") # 记录首页 URL
+
+        # 3. 生成简单的 Privacy 和 Terms (防止死链)
+        # 这里直接生成简单的静态 HTML，不需要模板，保证功能可用
+        privacy_content = f"""<html><head><title>{trans['privacy']}</title></head><body style="padding:20px; font-family:sans-serif;"><h1>{trans['privacy']}</h1><p>We use cookies to improve experience.</p><p><a href="index.html">Back to Home</a></p></body></html>"""
+        with open(f"{current_output_dir}/privacy.html", "w", encoding="utf-8") as f:
+            f.write(privacy_content)
+        ALL_URLS.append(f"{url_prefix}/privacy.html")
+
+        terms_content = f"""<html><head><title>{trans['terms']}</title></head><body style="padding:20px; font-family:sans-serif;"><h1>{trans['terms']}</h1><p>Standard terms apply.</p><p><a href="index.html">Back to Home</a></p></body></html>"""
+        with open(f"{current_output_dir}/terms.html", "w", encoding="utf-8") as f:
+            f.write(terms_content)
+        ALL_URLS.append(f"{url_prefix}/terms.html")
+
+    # --- 4. 生成 CNAME ---
     if os.path.exists("CNAME"): shutil.copy("CNAME", f"{base_output_dir}/CNAME")
-    
-    # 简单生成英文首页 (为了不报错，首页暂时只做英文，或者你可以复制逻辑做多语言首页)
-    # 这里为了稳妥，我们生成一个英文首页
-    tpl_index = env.get_template('index.html')
-    # 首页数据我们只拿英文的
-    en_pages = []
-    for index, row in df.iterrows():
-        if row['Tool_Name'] == hero: continue
-        slug = f"{hero.lower()}-vs-{row['Tool_Name'].lower().replace(' ', '-')}"
-        en_pages.append({'title': f"{hero} vs {row['Tool_Name']}", 'link': f"{slug}.html"})
-        
-    with open(f"{base_output_dir}/index.html", "w", encoding="utf-8") as f:
-        f.write(tpl_index.render(config=config, pages=en_pages, trans=TRANSLATIONS['en']))
 
+    # --- 5. 生成 Robots.txt ---
+    robots_txt = f"""User-agent: *
+Allow: /
+Sitemap: {config['domain']}/sitemap.xml
+"""
+    with open(f"{base_output_dir}/robots.txt", "w", encoding="utf-8") as f:
+        f.write(robots_txt)
+    print("✅ Robots.txt generated.")
+
+    # --- 6. 生成 Sitemap.xml (核心) ---
+    print(f"🗺️ Generating Sitemap with {len(ALL_URLS)} URLs...")
+    sitemap_content = '<?xml version="1.0" encoding="UTF-8"?>\n'
+    sitemap_content += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    
+    for url in ALL_URLS:
+        # 清理可能产生的双斜杠 (除 https:// 外)
+        clean_url = url.replace('//', '/').replace('https:/', 'https://')
+        sitemap_content += '  <url>\n'
+        sitemap_content += f'    <loc>{clean_url}</loc>\n'
+        sitemap_content += f'    <lastmod>{datetime.datetime.now().strftime("%Y-%m-%d")}</lastmod>\n'
+        sitemap_content += '  </url>\n'
+    
+    sitemap_content += '</urlset>'
+    
+    with open(f"{base_output_dir}/sitemap.xml", "w", encoding="utf-8") as f:
+        f.write(sitemap_content)
+    
+    print("✅ Sitemap.xml generated successfully.")
     print("✅ Full Site Build Complete.")
+
+if __name__ == "__main__":
+    # 模拟 Config 运行 (Cloudflare 会调用 generate_pages)
+    import json
+    if os.path.exists('config.json'):
+        with open('config.json', 'r') as f:
+            config = json.load(f)
+            generate_pages(f"data/{config['data_file']}", config)
+    else:
+        # 本地测试 fallback
+        print("⚠️ No config.json found, checking local mode...")
