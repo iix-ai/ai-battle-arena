@@ -96,33 +96,66 @@ class SiteGenerator:
             
             self.generated_urls.append(filename)
 
-    def generate_index(self, tools, pairs_count):
-        # Simple Index Page
-        index_content = f"""
+    def generate_index(self, tools):
+        print("🏠 Generating Professional Index Page...")
+        pairs = list(combinations(tools, 2))
+        
+        # 使用内联 CSS 确保首页也有颜值
+        html_content = f"""
         <!DOCTYPE html>
         <html lang="en">
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>SaaS Battle Arena - Top Software Comparisons</title>
+            <title>SaaS Battle Arena - Top 2026 Software Comparisons</title>
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+            <script>
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){{dataLayer.push(arguments);}}
+              gtag('js', new Date());
+              gtag('config', 'G-XXXXXXXXXX');
+            </script>
             <style>
-                body {{ background:#0f172a; color:white; font-family: sans-serif; padding: 2rem; }}
-                .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1rem; }}
-                .card {{ background: #1e293b; padding: 1rem; border-radius: 8px; border: 1px solid #334155; }}
-                a {{ color: #38bdf8; text-decoration: none; }}
+                body {{ background: #0f172a; color: #f1f5f9; font-family: system-ui, sans-serif; padding: 40px 20px; }}
+                .container {{ max-width: 1200px; margin: 0 auto; }}
+                h1 {{ text-align: center; font-size: 3rem; margin-bottom: 10px; color: #3b82f6; }}
+                .subtitle {{ text-align: center; color: #94a3b8; margin-bottom: 60px; font-size: 1.2rem; }}
+                .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }}
+                .card {{ background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; transition: 0.2s; text-align: center; }}
+                .card:hover {{ transform: translateY(-5px); border-color: #3b82f6; }}
+                .card a {{ color: #38bdf8; text-decoration: none; font-weight: bold; font-size: 1.1rem; display: block; }}
+                .vs-tag {{ color: #64748b; font-size: 0.9rem; margin: 5px 0; }}
+                footer {{ text-align: center; margin-top: 80px; color: #475569; border-top: 1px solid #1e293b; padding-top: 40px; }}
+                footer a {{ color: #64748b; text-decoration: none; margin: 0 10px; }}
             </style>
         </head>
         <body>
-            <h1 style="text-align:center">⚔️ SaaS Battle Arena</h1>
-            <p style="text-align:center">{pairs_count} Comparisons Generated</p>
-            <div class="grid">
-                {''.join([f'<div class="card"><a href="{url}">{url.replace(".html","").replace("-", " ").title()}</a></div>' for url in self.generated_urls])}
+            <div class="container">
+                <h1>⚔️ SaaS Battle Arena</h1>
+                <p class="subtitle">Unbiased, AI-driven comparisons of {len(tools)} top SEO tools. {len(pairs)} battles generated.</p>
+                
+                <div class="grid">
+                    {''.join([f'''
+                    <div class="card">
+                        <div class="vs-tag">Comparison</div>
+                        <a href="{t[0]["Tool_Name"].lower().replace(" ","").replace(".","")}-vs-{t[1]["Tool_Name"].lower().replace(" ","").replace(".","")}.html">
+                            {t[0]["Tool_Name"]} <span style="color:white">vs</span> {t[1]["Tool_Name"]}
+                        </a>
+                    </div>
+                    ''' for t in pairs])}
+                </div>
+                
+                <footer>
+                    <p>&copy; 2026 SaaS Battle Arena.</p>
+                    <p><a href="privacy.html">Privacy</a> | <a href="terms.html">Terms</a></p>
+                </footer>
             </div>
         </body>
         </html>
         """
+        
         with open(os.path.join(self.output_dir, "index.html"), 'w', encoding='utf-8') as f:
-            f.write(index_content)
+            f.write(html_content)
 
     def generate_sitemap(self):
         # [RESTORED FEATURE] Sitemap Generation
@@ -175,3 +208,4 @@ class SiteGenerator:
 if __name__ == "__main__":
     generator = SiteGenerator()
     generator.run()
+
