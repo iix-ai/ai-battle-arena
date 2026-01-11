@@ -2,38 +2,41 @@ name: Deploy SaaS Killer Site
 
 on:
   push:
-    branches:
-      - main  # 只有推送到 main 分支时才触发
-
-permissions:
-  contents: write
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * *'  # 每天运行一次
+  workflow_dispatch:      # 允许手动按钮触发
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout 🛎️
-        uses: actions/checkout@v4
+    permissions:
+      contents: write
 
-      - name: Set up Python 🐍
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      - name: Install Dependencies 🔧
+      - name: Install Dependencies
         run: |
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
+          pip install pandas jinja2
 
-      - name: Build Site 🏗️
-        env:
-          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}  # 从 Secrets 读取 Key
-        run: |
-          python main.py
+      - name: Build Site
+        run: python main.py
 
-      - name: Deploy to GitHub Pages 🚀
+      - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./public  # 把生成出来的 public 文件夹推送到 Pages
-          cname: compare.ii-x.com # 确保 CNAME 正确
+          # 【核心修复】这里必须填 output，因为 Python 把网页生成在这里
+          publish_dir: ./output
+          # 保留 CNAME，防止域名失效
+          keep_files: false
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
