@@ -1,24 +1,26 @@
-import json
+import sys
 import os
-from src.enricher import enrich_data
-from src.visualizer import generate_charts
-from src.generator import generate_pages
+import runpy
 
-def main():
-    # 确保目录存在
-    os.makedirs('data/images', exist_ok=True)
-    
-    with open('config.json', 'r') as f:
-        config = json.load(f)
+# 设置路径，确保能找到 src
+current_dir = os.path.dirname(os.path.abspath(__file__))
+src_dir = os.path.join(current_dir, 'src')
+if src_dir not in sys.path:
+    sys.path.append(src_dir)
 
-    # 1. AI 注入 (读取 raw, 输出 enriched)
-    enrich_data('data/tools_raw.csv', 'data/tools_enriched.csv')
-    
-    # 2. 生成图片 (读取 enriched, 输出到 data/images)
-    generate_charts('data/tools_enriched.csv', 'data/images', config)
-    
-    # 3. 生成网页 (读取 enriched 和 images, 输出到 public)
-    generate_pages('data/tools_enriched.csv', config)
+print("🚀 Starting Tiandao Project v4.5 Generator...")
 
-if __name__ == "__main__":
-    main()
+try:
+    # 【核心修复】
+    # 不再去 import 具体的函数名（如 generate_pages），而是直接运行 generator 模块本身。
+    # 这样无论 v4.5 内部是 main() 还是 class，都会自动执行其 if __name__ == "__main__": 下的逻辑。
+    runpy.run_module('src.generator', run_name='__main__')
+    
+    print("✅ Generator execution completed.")
+
+except Exception as e:
+    print(f"❌ Critical Error executing src.generator: {e}")
+    # 打印错误详情以便调试
+    import traceback
+    traceback.print_exc()
+    sys.exit(1)
