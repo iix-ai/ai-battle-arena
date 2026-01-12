@@ -1,151 +1,228 @@
 import os
 import pandas as pd
-import json
 from jinja2 import Environment, FileSystemLoader
 from itertools import combinations
+import datetime
 import shutil
-from datetime import datetime
 
-# Tiandao Project Generator v8.0 (Optimized & Monetized)
+# Tiandao Project Generator v7.1 (Final Stable)
+# Fixes argument mismatch error in run()
+
 class SiteGenerator:
     def __init__(self):
-        # 1. 路径初始化 (保持原逻辑)
         self.base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.data_path = os.path.join(self.base_dir, 'data', 'data.csv')
-        self.config_path = os.path.join(self.base_dir, 'config.json')
         self.template_dir = os.path.join(self.base_dir, 'templates')
         self.output_dir = os.path.join(self.base_dir, 'output')
         self.static_dir = os.path.join(self.base_dir, 'static')
-        
-        # 2. 加载配置文件 (新增功能：用于控制佣金链接)
-        try:
-            with open(self.config_path, 'r', encoding='utf-8') as f:
-                self.config = json.load(f)
-        except Exception:
-            self.config = {} #以此防止配置缺失报错
-        
         self.generated_urls = []
 
     def load_data(self):
-        # 3. 数据加载与清洗 (增强稳定性)
-        if not os.path.exists(self.data_path): 
-            print("Error: Data file not found!")
+        print(f"📂 Loading data from {self.data_path}...")
+        if not os.path.exists(self.data_path):
+            print("❌ Data file missing!")
             return []
+        
         try:
-            # 增加 on_bad_lines='skip' 防止 DeepSeek 生成的坏数据导致崩溃
+            # 读取 CSV，header=0 指定第一行为表头
             df = pd.read_csv(self.data_path, header=0, on_bad_lines='skip', encoding='utf-8')
+            
+            # 清洗脏数据：过滤掉重复的表头行
+            df = df[df['Tool_Name'] != 'Tool_Name']
+            
+            # 填充空值
             df = df.fillna("Info pending")
+            df['Price'] = df['Price'].replace("", "Check Website")
+            
             return df.to_dict('records')
         except Exception as e:
-            print(f"Data Load Error: {e}")
+            print(f"❌ CSV Error: {e}")
             return []
 
-    def get_affiliate_link(self, tool_name, original_link):
-        # 4. 【核心新增】佣金拦截器
-        # 逻辑：如果在 config.json 里配置了高佣链接，就替换掉 CSV 里的官网链接
-        if not self.config or 'affiliate_map' not in self.config:
-            return original_link
-            
-        clean_name = str(tool_name).strip()
-        for key, link in self.config.get('affiliate_map', {}).items():
-            if key.lower() in clean_name.lower():
-                # 命中高佣名单！替换链接！
-                return link
-        return original_link
-
     def generate_pages(self, tools):
-        # 5. 页面生成引擎
         env = Environment(loader=FileSystemLoader(self.template_dir))
-        env.globals['now'] = datetime.utcnow
-        template = env.get_template('comparison.html') 
-        
-        # 核心裂变：C(N, 2) 排列组合
+        try:
+            template = env.get_template('page.html')
+        except Exception as e:
+            print(f"❌ Template Error: {e}")
+            return
+
         pairs = list(combinations(tools, 2))
-        print(f"Generating {len(pairs)} comparison pages...")
+        print(f"⚔️  Generating {len(pairs)} battle pages...")
 
         for tool_a, tool_b in pairs:
-            # 执行链接替换
-            tool_a['Affiliate_Link'] = self.get_affiliate_link(tool_a['Tool_Name'], tool_a.get('Affiliate_Link', '#'))
-            tool_b['Affiliate_Link'] = self.get_affiliate_link(tool_b['Tool_Name'], tool_b.get('Affiliate_Link', '#'))
-            
-            # 生成 SEO 友好的 URL (slug)
-            slug = f"{str(tool_a['Tool_Name']).lower()}-vs-{str(tool_b['Tool_Name']).lower()}".replace(" ", "-").replace(".", "")
+            # 生成 Slug
+            name_a = str(tool_a.get('Tool_Name', 'Unknown')).strip()
+            name_b = str(tool_b.get('Tool_Name', 'Unknown')).strip()
+            slug = f"{name_a.lower()}-vs-{name_b.lower()}".replace(" ", "-").replace(".", "")
             filename = f"{slug}.html"
             
-            # 渲染 (HTML 结构全部在 comparison.html 中)
-            html = template.render(
-                tool_a=tool_a,
-                tool_b=tool_b,
-                config=self.config,
-                current_year=datetime.now().year,
-                page_slug=slug
-            )
-            
-            with open(os.path.join(self.output_dir, filename), 'w', encoding='utf-8') as f:
-                f.write(html)
-            
-            self.generated_urls.append(filename)
+            # 生成长文内容
+            article_body = f"""
+            <div class="battle-section">
+                <h2>The Ultimate Showdown: {name_a} vs {name_b}</h2>
+                <p>In the competitive world of SEO tools, deciding between <strong>{name_a}</strong> and <strong>{name_b}</strong> is a common dilemma. Both platforms offer powerful features, but they cater to different needs.</p>
+                
+                <h3>1. Deep Dive: {name_a}</h3>
+                <p>{tool_a.get('Long_Review', 'Review pending...')}</p>
+                <div class="verdict-box"><strong>Verdict:</strong> {tool_a.get('Verdict', '')}</div>
+                
+                <h3>2. Deep Dive: {name_b}</h3>
+                <p>{tool_b.get('Long_Review', 'Review pending...')}</p>
+                <div class="verdict-box"><strong>Verdict:</strong> {tool_b.get('Verdict', '')}</div>
+                
+                <h3>3. Feature & Price Comparison</h3>
+                <p>{name_a} enters the ring at {tool_a.get('Price', 'N/A')}, while {name_b} costs {tool_b.get('Price', 'N/A')}. 
+                If budget is your primary concern, check the pricing details above carefully.</p>
+                
+                <h3>4. Final Recommendation</h3>
+                <p>If you need <strong>{tool_a.get('Pros', '').split(';')[0]}</strong>, then {name_a} is likely your best choice.</p>
+                <p>However, for those prioritizing <strong>{tool_b.get('Pros', '').split(';')[0]}</strong>, {name_b} stands out as the winner.</p>
+            </div>
+            """
+
+            render_data = {
+                'tool_a': tool_a,
+                'tool_b': tool_b,
+                'title': f"{name_a} vs {name_b} - 2026 Comparison",
+                'meta_description': f"Unbiased comparison of {name_a} vs {name_b}. {tool_a.get('Description', '')[:100]}...",
+                'article_body': article_body,
+                'date': datetime.datetime.now().strftime("%B %Y")
+            }
+
+            try:
+                content = template.render(**render_data)
+                with open(os.path.join(self.output_dir, filename), 'w', encoding='utf-8') as f:
+                    f.write(content)
+                self.generated_urls.append(filename)
+            except Exception as e:
+                print(f"⚠️ Error generating {filename}: {e}")
 
     def generate_index(self, tools):
-        # 6. 首页生成
-        env = Environment(loader=FileSystemLoader(self.template_dir))
-        template = env.get_template('index.html')
+        # 【注意】这里只接收 tools 一个参数
+        print("🏠 Generating Professional Index Page...")
+        pairs = list(combinations(tools, 2))
         
-        # 为了首页加载速度，只取前 20 对热门组合展示
-        top_pairs = list(combinations(tools[:10], 2)) 
+        # 内嵌 CSS 的专业首页
+        html_content = f"""
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>SaaS Battle Arena - Top 2026 Software Comparisons</title>
+            <meta name="description" content="Unbiased AI-driven comparisons of top B2B SaaS tools. Find the best software for your business.">
+            <style>
+                body {{ background: #0f172a; color: #f1f5f9; font-family: system-ui, sans-serif; padding: 40px 20px; margin: 0; }}
+                .container {{ max-width: 1200px; margin: 0 auto; }}
+                h1 {{ text-align: center; font-size: 2.5rem; margin-bottom: 10px; color: #3b82f6; }}
+                .subtitle {{ text-align: center; color: #94a3b8; margin-bottom: 60px; font-size: 1.1rem; }}
+                .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }}
+                .card {{ background: #1e293b; padding: 20px; border-radius: 12px; border: 1px solid #334155; transition: 0.2s; text-align: center; text-decoration: none; display: block; }}
+                .card:hover {{ transform: translateY(-5px); border-color: #3b82f6; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }}
+                .card-title {{ color: #38bdf8; font-weight: bold; font-size: 1.1rem; margin-bottom: 5px; }}
+                .vs-tag {{ color: #64748b; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; }}
+                footer {{ text-align: center; margin-top: 80px; color: #475569; border-top: 1px solid #1e293b; padding-top: 40px; }}
+                footer a {{ color: #64748b; text-decoration: none; margin: 0 10px; transition: color 0.2s; }}
+                footer a:hover {{ color: #38bdf8; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>⚔️ SaaS Battle Arena</h1>
+                <p class="subtitle">Unbiased, AI-driven comparisons of {len(tools)} top SEO tools. {len(pairs)} battles generated.</p>
+                
+                <div class="grid">
+                    {''.join([f'''
+                    <a href="{str(t[0].get("Tool_Name")).strip().lower().replace(" ","").replace(".","")}-vs-{str(t[1].get("Tool_Name")).strip().lower().replace(" ","").replace(".","")}.html" class="card">
+                        <div class="vs-tag">Comparison</div>
+                        <div class="card-title">
+                            {t[0].get("Tool_Name")} <span style="color:#94a3b8">vs</span> {t[1].get("Tool_Name")}
+                        </div>
+                    </a>
+                    ''' for t in pairs])}
+                </div>
+                
+                <footer>
+                    <p>&copy; 2026 SaaS Battle Arena.</p>
+                    <p>
+                        <a href="privacy.html">Privacy Policy</a> | 
+                        <a href="terms.html">Terms of Service</a>
+                    </p>
+                </footer>
+            </div>
+        </body>
+        </html>
+        """
         
-        html = template.render(
-            tools=tools,
-            top_pairs=top_pairs,
-            config=self.config,
-            current_year=datetime.now().year
-        )
-        with open(os.path.join(self.output_dir, 'index.html'), 'w', encoding='utf-8') as f:
-            f.write(html)
+        with open(os.path.join(self.output_dir, "index.html"), 'w', encoding='utf-8') as f:
+            f.write(html_content)
 
     def generate_sitemap(self):
-        # 7. 【核心新增】Sitemap 生成器
-        # 旧代码可能缺失了这里，导致内页不被收录
-        base_url = self.config.get('site_domain', 'https://compare.ii-x.com')
-        sitemap_content = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        print("🗺️  Generating Sitemap...")
+        base_url = "https://compare.ii-x.com"
+        xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
         
-        # 写入首页
-        sitemap_content += f'  <url><loc>{base_url}/</loc><priority>1.0</priority></url>\n'
+        # Add homepage
+        xml += f'<url><loc>{base_url}/</loc><priority>1.0</priority></url>\n'
         
-        # 循环写入所有对比页
-        for filename in self.generated_urls:
-            sitemap_content += f'  <url><loc>{base_url}/{filename}</loc><priority>0.8</priority></url>\n'
+        # Add all pages
+        for url in self.generated_urls:
+            xml += f'<url><loc>{base_url}/{url}</loc><priority>0.8</priority></url>\n'
             
-        sitemap_content += '</urlset>'
-        
-        with open(os.path.join(self.output_dir, 'sitemap.xml'), 'w', encoding='utf-8') as f:
-            f.write(sitemap_content)
+        xml += '</urlset>'
+        with open(os.path.join(self.output_dir, "sitemap.xml"), 'w', encoding='utf-8') as f:
+            f.write(xml)
+
+    def generate_robots(self):
+        with open(os.path.join(self.output_dir, "robots.txt"), 'w', encoding='utf-8') as f:
+            f.write("User-agent: *\nAllow: /\nSitemap: https://compare.ii-x.com/sitemap.xml")
 
     def copy_assets(self):
-        # 8. 资源复制 (保持不变)
+        # 复制静态资源（如果存在）
         if os.path.exists(self.static_dir):
-            target_static = os.path.join(self.output_dir, 'static')
-            if os.path.exists(target_static):
-                shutil.rmtree(target_static)
-            shutil.copytree(self.static_dir, target_static)
-        
-        robots_path = os.path.join(self.base_dir, 'robots.txt')
-        if os.path.exists(robots_path):
-            shutil.copy(robots_path, os.path.join(self.output_dir, 'robots.txt'))
+            try:
+                output_static = os.path.join(self.output_dir, 'static')
+                if os.path.exists(output_static):
+                    shutil.rmtree(output_static)
+                shutil.copytree(self.static_dir, output_static)
+                print("🎨 Assets copied.")
+            except Exception as e:
+                print(f"⚠️ Asset copy failed: {e}")
+                
+        # 自动生成简单的 Privacy 和 Terms 页面（如果不存在）
+        privacy_path = os.path.join(self.output_dir, "privacy.html")
+        if not os.path.exists(privacy_path):
+            with open(privacy_path, 'w', encoding='utf-8') as f:
+                f.write("<h1>Privacy Policy</h1><p>We respect your privacy.</p>")
+                
+        terms_path = os.path.join(self.output_dir, "terms.html")
+        if not os.path.exists(terms_path):
+            with open(terms_path, 'w', encoding='utf-8') as f:
+                f.write("<h1>Terms of Service</h1><p>Use at your own risk.</p>")
 
     def run(self):
-        # 主执行流
-        if os.path.exists(self.output_dir): shutil.rmtree(self.output_dir)
-        os.makedirs(self.output_dir)
+        print("🚀 Starting Generator v7.1...")
         
-        tools = self.load_data()
-        if not tools: return
+        # 清理并重建输出目录
+        if os.path.exists(self.output_dir):
+            shutil.rmtree(self.output_dir)
+        os.makedirs(self.output_dir)
             
+        tools = self.load_data()
+        if not tools:
+            print("❌ No tools loaded. Aborting.")
+            return
+
         self.generate_pages(tools)
+        
+        # 【修复点】：这里只传 tools 一个参数，匹配上面的定义
         self.generate_index(tools)
+        
         self.generate_sitemap()
+        self.generate_robots()
         self.copy_assets()
-        print("Build Complete.")
+        print("✅ Generation Complete.")
 
 if __name__ == "__main__":
     generator = SiteGenerator()
