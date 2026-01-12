@@ -153,7 +153,7 @@ class SiteGenerator:
                 <p class="subtitle">Unbiased, AI-driven comparisons of {len(tools)} top SEO tools. {len(pairs)} battles generated.</p>
                 <div class="grid">
                     {''.join([f'''
-                    <a href="{str(t[0].get("Tool_Name")).strip().lower().replace(" ","").replace(".","")}-vs-{str(t[1].get("Tool_Name")).strip().lower().replace(" ","").replace(".","")}.html" class="card">
+                    <a href="{str(t[0].get("Tool_Name")).strip().lower().replace(" ", "-").replace(".", "")}-vs-{str(t[1].get("Tool_Name")).strip().lower().replace(" ", "-").replace(".", "")}.html" class="card">
                         <div class="vs-tag">Comparison</div>
                         <div class="card-title">
                             {t[0].get("Tool_Name")} <span style="color:#94a3b8">vs</span> {t[1].get("Tool_Name")}
@@ -229,3 +229,4 @@ class SiteGenerator:
 if __name__ == "__main__":
     generator = SiteGenerator()
     generator.run()
+
