@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SaaS Battle Arena{% endblock %}</title>
+    
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    
+    <link rel="stylesheet" href="/static/style.css">
+    
+    <script async src="https://www.googletagmanager.com/gtag/js?id={{ config.google_analytics_id }}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', '{{ config.google_analytics_id }}');
+    </script>
+    
+    <style>
+        /* 3. Top Bar 样式 */
+        .top-bar {
+            background: #111827;
+            color: #fff;
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        .top-bar a { color: #FCD34D; text-decoration: underline; }
+        
+        /* 4. Exit Intent Popup 样式 */
+        .exit-popup {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        .popup-content {
+            background: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 500px;
+            position: relative;
+        }
+        .close-btn {
+            position: absolute;
+            top: 10px; right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        .cta-btn {
+            background: #2563EB; color: #fff;
+            padding: 12px 24px; border-radius: 8px;
+            text-decoration: none; font-weight: bold;
+            display: inline-block; margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+    {% if config.top_bar.enabled %}
+    <div class="top-bar" id="topBar">
+        {{ config.top_bar.text }} 
+        <a href="{{ config.top_bar.link }}">Claim Now &rarr;</a>
+    </div>
+    {% endif %}
+
+    <nav>
+        <a href="/" style="font-weight:900; font-size:1.2rem;">⚡ Battle Arena</a>
+    </nav>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; {{ current_year }} {{ config.site_name }}. Unbiased Reviews.</p>
+        <p><a href="/privacy.html">Privacy</a> | <a href="/terms.html">Terms</a></p>
+    </footer>
+
+    <div class="exit-popup" id="exitPopup">
+        <div class="popup-content">
+            <span class="close-btn" onclick="closePopup()">&times;</span>
+            <h2>Wait! Don't Miss Out</h2>
+            <p>We've found a special deal for you.</p>
+            <p style="font-size: 1.2rem; margin: 15px 0;">🎁 <strong>Save up to 30% on Software</strong></p>
+            <a href="#deal" class="cta-btn">Check Deals</a>
+        </div>
+    </div>
+
+    <script>
+        // Exit Intent Logic
+        const popup = document.getElementById('exitPopup');
+        let hasShown = false;
+
+        const closePopup = () => {
+            popup.style.display = 'none';
+        }
+
+        document.addEventListener('mouseleave', (e) => {
+            if (e.clientY < 0 && !hasShown) {
+                // 只有当鼠标移出浏览器顶部时触发
+                popup.style.display = 'flex';
+                hasShown = true;
+            }
+        });
+
+        // 也可以让 top bar 鼠标掠过触发（如果不想要这个，可以删除下面这段）
+        const topBar = document.getElementById('topBar');
+        if(topBar) {
+            topBar.addEventListener('mouseenter', () => {
+                // 如果您想鼠标碰到顶栏就弹窗，可以解开这行注释：
+                // if(!hasShown) { popup.style.display = 'flex'; hasShown = true; }
+            });
+        }
+    </script>
+
+</body>
+</html>
