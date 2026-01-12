@@ -1,16 +1,19 @@
 {
   "site_name": "SaaS Battle Arena",
   "domain": "https://compare.ii-x.com",
+  "google_analytics_id": "G-ZTXQMR69L9",
   
-  "hero_product": "Mangools",
-  "hero_affiliate_link": "https://mangools.com#a6944b0716aee08b68b6302a9", 
-  
-  "currency": "$",
-  "ga_tracking_id": "G-ZTXQMR69L9", 
-  
-  "winner_logic": {
-    "price_weight": 0.6,
-    "feature_weight": 0.4
+  "affiliate_map": {
+    "Mangools": "https://mangools.com#a6944b0716aee08b68b6302a9",
+    "NordVPN": "https://go.nordvpn.net/aff_c?offer_id=15&aff_id=99999",
+    "Surfshark": "https://surfshark.club/friend/xxxxxx",
+    "Notion": "https://affiliate.notion.so/xxxxx"
+  },
+
+  "top_bar": {
+    "enabled": true,
+    "text": "🔥 Limited Time Offer: Get 30% OFF on Top Rated Tools for 2026!",
+    "link": "#best-deal"
   },
 
   "legal": {
