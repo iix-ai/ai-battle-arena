@@ -1,21 +1,30 @@
 import os
 import pandas as pd
+import json
 from jinja2 import Environment, FileSystemLoader
 from itertools import combinations
 import datetime
 import shutil
 
-# Tiandao Project Generator v7.1 (Final Stable)
-# Fixes argument mismatch error in run()
+# Tiandao Project Generator v8.0 (Optimized & Monetized)
+# Based on v7.1 Stable - Preserves Article Stitching Logic
 
 class SiteGenerator:
     def __init__(self):
         self.base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.data_path = os.path.join(self.base_dir, 'data', 'data.csv')
+        self.config_path = os.path.join(self.base_dir, 'config.json') # 新增配置路径
         self.template_dir = os.path.join(self.base_dir, 'templates')
         self.output_dir = os.path.join(self.base_dir, 'output')
         self.static_dir = os.path.join(self.base_dir, 'static')
         self.generated_urls = []
+        
+        # 加载配置 (新增)
+        try:
+            with open(self.config_path, 'r', encoding='utf-8') as f:
+                self.config = json.load(f)
+        except Exception:
+            self.config = {}
 
     def load_data(self):
         print(f"📂 Loading data from {self.data_path}...")
@@ -24,20 +33,26 @@ class SiteGenerator:
             return []
         
         try:
-            # 读取 CSV，header=0 指定第一行为表头
             df = pd.read_csv(self.data_path, header=0, on_bad_lines='skip', encoding='utf-8')
-            
-            # 清洗脏数据：过滤掉重复的表头行
             df = df[df['Tool_Name'] != 'Tool_Name']
-            
-            # 填充空值
             df = df.fillna("Info pending")
-            df['Price'] = df['Price'].replace("", "Check Website")
-            
+            # 确保 Price 也是字符串，防止报错
+            df['Price'] = df['Price'].astype(str).replace("nan", "Check Website").replace("", "Check Website")
             return df.to_dict('records')
         except Exception as e:
             print(f"❌ CSV Error: {e}")
             return []
+
+    # 【核心新增】佣金拦截器
+    def get_affiliate_link(self, tool_name, original_link):
+        if not self.config or 'affiliate_map' not in self.config:
+            return original_link
+            
+        clean_name = str(tool_name).strip()
+        for key, link in self.config.get('affiliate_map', {}).items():
+            if key.lower() in clean_name.lower():
+                return link
+        return original_link
 
     def generate_pages(self, tools):
         env = Environment(loader=FileSystemLoader(self.template_dir))
@@ -51,13 +66,17 @@ class SiteGenerator:
         print(f"⚔️  Generating {len(pairs)} battle pages...")
 
         for tool_a, tool_b in pairs:
-            # 生成 Slug
+            # 1. 在生成内容前，先把链接替换成高佣链接 (新增逻辑)
+            tool_a['Affiliate_Link'] = self.get_affiliate_link(tool_a['Tool_Name'], tool_a.get('Affiliate_Link', '#'))
+            tool_b['Affiliate_Link'] = self.get_affiliate_link(tool_b['Tool_Name'], tool_b.get('Affiliate_Link', '#'))
+
+            # 2. 生成 Slug
             name_a = str(tool_a.get('Tool_Name', 'Unknown')).strip()
             name_b = str(tool_b.get('Tool_Name', 'Unknown')).strip()
             slug = f"{name_a.lower()}-vs-{name_b.lower()}".replace(" ", "-").replace(".", "")
             filename = f"{slug}.html"
             
-            # 生成长文内容
+            # 3. 生成长文内容 (完整保留您原有的拼接逻辑)
             article_body = f"""
             <div class="battle-section">
                 <h2>The Ultimate Showdown: {name_a} vs {name_b}</h2>
@@ -76,18 +95,19 @@ class SiteGenerator:
                 If budget is your primary concern, check the pricing details above carefully.</p>
                 
                 <h3>4. Final Recommendation</h3>
-                <p>If you need <strong>{tool_a.get('Pros', '').split(';')[0]}</strong>, then {name_a} is likely your best choice.</p>
-                <p>However, for those prioritizing <strong>{tool_b.get('Pros', '').split(';')[0]}</strong>, {name_b} stands out as the winner.</p>
+                <p>If you need <strong>{str(tool_a.get('Pros', '')).split(';')[0]}</strong>, then {name_a} is likely your best choice.</p>
+                <p>However, for those prioritizing <strong>{str(tool_b.get('Pros', '')).split(';')[0]}</strong>, {name_b} stands out as the winner.</p>
             </div>
             """
 
             render_data = {
                 'tool_a': tool_a,
                 'tool_b': tool_b,
-                'title': f"{name_a} vs {name_b} - 2026 Comparison",
-                'meta_description': f"Unbiased comparison of {name_a} vs {name_b}. {tool_a.get('Description', '')[:100]}...",
+                'title': f"{name_a} vs {name_b}: Which is Better in 2026? (Honest Review)", # 优化了标题
+                'meta_description': f"Unbiased comparison of {name_a} vs {name_b}. {str(tool_a.get('Description', ''))[:100]}...",
                 'article_body': article_body,
-                'date': datetime.datetime.now().strftime("%B %Y")
+                'date': datetime.datetime.now().strftime("%B %Y"),
+                'config': self.config # 传入配置供模板使用
             }
 
             try:
@@ -99,11 +119,10 @@ class SiteGenerator:
                 print(f"⚠️ Error generating {filename}: {e}")
 
     def generate_index(self, tools):
-        # 【注意】这里只接收 tools 一个参数
         print("🏠 Generating Professional Index Page...")
         pairs = list(combinations(tools, 2))
         
-        # 内嵌 CSS 的专业首页
+        # 首页逻辑保持不变，确保首页也使用 favicon
         html_content = f"""
         <!DOCTYPE html>
         <html lang="en">
@@ -111,6 +130,7 @@ class SiteGenerator:
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>SaaS Battle Arena - Top 2026 Software Comparisons</title>
+            <link rel="icon" href="/static/favicon.png" type="image/png">
             <meta name="description" content="Unbiased AI-driven comparisons of top B2B SaaS tools. Find the best software for your business.">
             <style>
                 body {{ background: #0f172a; color: #f1f5f9; font-family: system-ui, sans-serif; padding: 40px 20px; margin: 0; }}
@@ -131,7 +151,6 @@ class SiteGenerator:
             <div class="container">
                 <h1>⚔️ SaaS Battle Arena</h1>
                 <p class="subtitle">Unbiased, AI-driven comparisons of {len(tools)} top SEO tools. {len(pairs)} battles generated.</p>
-                
                 <div class="grid">
                     {''.join([f'''
                     <a href="{str(t[0].get("Tool_Name")).strip().lower().replace(" ","").replace(".","")}-vs-{str(t[1].get("Tool_Name")).strip().lower().replace(" ","").replace(".","")}.html" class="card">
@@ -142,19 +161,14 @@ class SiteGenerator:
                     </a>
                     ''' for t in pairs])}
                 </div>
-                
                 <footer>
                     <p>&copy; 2026 SaaS Battle Arena.</p>
-                    <p>
-                        <a href="privacy.html">Privacy Policy</a> | 
-                        <a href="terms.html">Terms of Service</a>
-                    </p>
+                    <p><a href="privacy.html">Privacy</a> | <a href="terms.html">Terms</a></p>
                 </footer>
             </div>
         </body>
         </html>
         """
-        
         with open(os.path.join(self.output_dir, "index.html"), 'w', encoding='utf-8') as f:
             f.write(html_content)
 
@@ -162,14 +176,9 @@ class SiteGenerator:
         print("🗺️  Generating Sitemap...")
         base_url = "https://compare.ii-x.com"
         xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        
-        # Add homepage
         xml += f'<url><loc>{base_url}/</loc><priority>1.0</priority></url>\n'
-        
-        # Add all pages
         for url in self.generated_urls:
             xml += f'<url><loc>{base_url}/{url}</loc><priority>0.8</priority></url>\n'
-            
         xml += '</urlset>'
         with open(os.path.join(self.output_dir, "sitemap.xml"), 'w', encoding='utf-8') as f:
             f.write(xml)
@@ -179,7 +188,6 @@ class SiteGenerator:
             f.write("User-agent: *\nAllow: /\nSitemap: https://compare.ii-x.com/sitemap.xml")
 
     def copy_assets(self):
-        # 复制静态资源（如果存在）
         if os.path.exists(self.static_dir):
             try:
                 output_static = os.path.join(self.output_dir, 'static')
@@ -190,7 +198,6 @@ class SiteGenerator:
             except Exception as e:
                 print(f"⚠️ Asset copy failed: {e}")
                 
-        # 自动生成简单的 Privacy 和 Terms 页面（如果不存在）
         privacy_path = os.path.join(self.output_dir, "privacy.html")
         if not os.path.exists(privacy_path):
             with open(privacy_path, 'w', encoding='utf-8') as f:
@@ -202,9 +209,7 @@ class SiteGenerator:
                 f.write("<h1>Terms of Service</h1><p>Use at your own risk.</p>")
 
     def run(self):
-        print("🚀 Starting Generator v7.1...")
-        
-        # 清理并重建输出目录
+        print("🚀 Starting Generator v8.0...")
         if os.path.exists(self.output_dir):
             shutil.rmtree(self.output_dir)
         os.makedirs(self.output_dir)
@@ -215,10 +220,7 @@ class SiteGenerator:
             return
 
         self.generate_pages(tools)
-        
-        # 【修复点】：这里只传 tools 一个参数，匹配上面的定义
         self.generate_index(tools)
-        
         self.generate_sitemap()
         self.generate_robots()
         self.copy_assets()
