@@ -163,6 +163,9 @@ class SiteGenerator:
                 </div>
                 <footer>
                     <p>&copy; 2026 SaaS Battle Arena.</p>
+                    <div style="margin: 20px auto; max-width: 800px; font-size: 0.8rem; color: #64748b; line-height: 1.5; opacity: 0.8;">
+                        {self.config.get('legal', {}).get('disclosure', 'Advertiser Disclosure: We may receive compensation if you click on links. This supports our research.')}
+                    </div>
                     <p><a href="privacy.html">Privacy</a> | <a href="terms.html">Terms</a></p>
                 </footer>
             </div>
@@ -229,4 +232,5 @@ class SiteGenerator:
 if __name__ == "__main__":
     generator = SiteGenerator()
     generator.run()
+
 
